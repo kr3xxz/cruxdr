@@ -1,0 +1,410 @@
+name: cruxdr
+
+networks:
+  crux-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  opensearch_data:
+  minio_data:
+  elasticsearch_data:
+
+services:
+
+  # =========================================
+  # ZOOKEEPER
+  # =========================================
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: crux-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # KAFKA
+  # =========================================
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: crux-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "${KAFKA_PORT}:9092"
+    environment:
+      KAFKA_BROKER_ID: ${KAFKA_BROKER_ID}
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - crux-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+
+  # =========================================
+  # POSTGRESQL
+  # =========================================
+
+  postgres:
+    image: postgres:16
+    container_name: crux-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crux-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  # =========================================
+  # REDIS
+  # =========================================
+
+  redis:
+    image: redis:7
+    container_name: crux-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - crux-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  # =========================================
+  # OPENSEARCH
+  # =========================================
+
+  opensearch:
+    image: opensearchproject/opensearch:2.12.0
+    container_name: crux-opensearch
+
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "CruxXDR@2026Secure!"
+      plugins.security.disabled: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+
+    ports:
+      - "${OPENSEARCH_PORT}:9200"
+
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  # =========================================
+  # QDRANT
+  # =========================================
+
+
+  qdrant:
+    image: qdrant/qdrant
+    container_name: crux-qdrant
+    ports:
+      - "6333:6333"
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # OPENSEARCH DASHBOARDS
+  # =========================================
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.12.0
+    container_name: crux-opensearch-dashboards
+    ports:
+      - "5601:5601"
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+    depends_on:
+      - opensearch
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # MINIO
+  # =========================================
+
+  minio:
+    image: minio/minio
+    container_name: crux-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # API GATEWAY
+  # =========================================
+
+  api-gateway:
+    build:
+      context: ./backend/apps/api-gateway
+    container_name: crux-api-gateway
+    volumes:
+      - ./backend/apps/api-gateway:/app
+
+    env_file:
+      - .env
+    ports:
+      - "${API_GATEWAY_PORT}:8000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # DETECTION SERVICE
+  # =========================================
+
+
+  detection-service:
+    build:
+      context: ./backend/apps/detection-service
+    container_name: crux-detection-service
+    depends_on:
+      - kafka
+      - opensearch
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # CORRELATION SERVICE
+  # =========================================
+
+  correlation-service:
+    build:
+      context: ./backend/apps/correlation-service
+
+    container_name: cruxdr-correlation-service
+
+    ports:
+      - "8030:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+  # =========================================
+  # THREAT INTEL SERVICE
+  # =========================================
+
+  threat-intel-service:
+    build:
+      context: ./backend/apps/threat-intel-service
+    container_name: crux-threat-intel-service
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # AI SERVICE
+  # =========================================
+  ai-service:
+    build:
+      context: ./backend/apps/ai-service
+    container_name: crux-ai-service
+    ports:
+      - "8001:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - crux-network
+    restart: unless-stopped
+  # =========================================
+  # UEBA SERVICE
+  # =========================================
+
+  ueba-service:
+    build:
+      context: ./backend/apps/ueba-service
+
+    container_name: cruxdr-ueba-service
+
+    ports:
+      - "8060:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+  # =========================================
+  # SOAR SERVICE
+  # =========================================
+
+  soar-service:
+    build:
+      context: ./backend/apps/soar-service
+    container_name: crux-soar-service
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+    networks:
+      - crux-network
+    restart: unless-stopped
+
+  # =========================================
+  # SIMULATION SERVICE
+  # =========================================
+
+  simulation-service:
+    build:
+      context: ./backend/apps/simulation-service
+
+    container_name: cruxdr-simulation-service
+
+    ports:
+      - "8010:8010"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+  # =========================================
+  # SEARCH SERVICE
+  # =========================================
+
+  search-service:
+    build:
+      context: ./backend/apps/search-service
+
+    container_name: cruxdr-search-service
+
+    ports:
+      - "8020:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+  # =========================================
+  # HUNTING SERVICE
+  # =========================================
+
+  hunting-service:
+    build:
+      context: ./backend/apps/hunting-service
+
+    container_name: cruxdr-hunting-service
+
+    ports:
+      - "8040:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+  # =========================================
+  # SIGMA SERVICE
+  # =========================================
+
+  sigma-service:
+    build:
+      context: ./backend/apps/sigma-service
+
+    container_name: cruxdr-sigma-service
+
+    ports:
+      - "8050:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+
+  # =========================================
+  # CONTROL SERVICE
+  # =========================================
+
+  control-service:
+    build:
+      context: ./backend/apps/control-service
+
+    container_name: cruxdr-control-service
+
+    ports:
+      - "8070:8000"
+
+    depends_on:
+      - kafka
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped
+

@@ -1,0 +1,24 @@
+title: Phishing Activity Detection
+
+id: sigma-phishing-001
+
+status: stable
+
+severity: high
+
+description: Detect phishing activity
+
+logsource:
+  product: cruxdr
+
+detection:
+  keywords:
+    - phishing
+    - malicious_link
+    - email
+
+mitre:
+  technique: T1566
+
+tags:
+  - attack.initial_access

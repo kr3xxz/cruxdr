@@ -1,0 +1,3 @@
+events = []
+
+search_history = []

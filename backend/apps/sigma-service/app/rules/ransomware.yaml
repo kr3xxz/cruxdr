@@ -1,0 +1,24 @@
+title: Ransomware Detection
+
+id: sigma-ransomware-001
+
+status: experimental
+
+severity: critical
+
+description: Detect ransomware activity
+
+logsource:
+  product: cruxdr
+
+detection:
+  keywords:
+    - ransomware
+    - encrypted_files
+    - .locked
+
+mitre:
+  technique: T1486
+
+tags:
+  - attack.impact

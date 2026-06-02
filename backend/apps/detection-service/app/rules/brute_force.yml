@@ -1,0 +1,16 @@
+title: SSH Brute Force
+
+id: RULE-001
+
+description: Detect multiple failed SSH logins
+
+severity: high
+
+mitre:
+  technique: T1110
+  tactic: Credential Access
+
+detection:
+  event_action: ssh-login-failed
+  threshold: 5
+  timeframe: 5m

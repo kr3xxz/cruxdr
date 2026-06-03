@@ -1,0 +1,30 @@
+print("DETECTION SERVICE STARTED")
+from app.core.state import FAILED_LOGINS, INCIDENTS
+from kafka import KafkaConsumer
+import json
+
+consumer = KafkaConsumer(
+    "cruxdr-logs",
+    bootstrap_servers="crux-kafka:9092",
+    value_deserializer=lambda m:
+        json.loads(m.decode("utf-8")),
+    auto_offset_reset="earliest",
+    group_id="cruxdr-detection"
+)
+
+for message in consumer:
+
+    event = message.value
+
+    print(
+        "[DETECTION EVENT]",
+        event
+    )
+
+    if event.get(
+        "event_type"
+    ) == "failed_login":
+
+        print(
+            "[ALERT] SSH Brute Force Detected"
+        )

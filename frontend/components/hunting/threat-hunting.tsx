@@ -2,276 +2,75 @@
 
 import { useState } from "react";
 
-import { motion } from "framer-motion";
+export default function ThreatHunting() {
 
-import { useEventStore } from "@/store/event-store";
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
 
-export function ThreatHunting() {
+  const hunt = async () => {
 
-  const events =
-    useEventStore(
-      (state) => state.events
+    const res = await fetch(
+      `http://localhost:8080/hunt?q=${encodeURIComponent(query)}`
     );
 
-  const [query, setQuery] =
-    useState(
-      "attack_type=ransomware severity=critical mitre=T1486"
-    );
+    const data = await res.json();
 
-  const [history, setHistory] =
-    useState<string[]>([]);
-
-  const [results, setResults] =
-    useState<any[]>([]);
-
-  const runHunt = () => {
-
-    const attackType =
-      query.match(
-        /attack_type=([^ ]+)/
-      )?.[1];
-
-    const severity =
-      query.match(
-        /severity=([^ ]+)/
-      )?.[1];
-
-    const mitre =
-      query.match(
-        /mitre=([^ ]+)/
-      )?.[1];
-
-    const matched =
-      (events ?? []).filter(
-        (event: any) => {
-
-          return (
-
-            (!attackType ||
-              event.attack_type === attackType) &&
-
-            (!severity ||
-              event.severity === severity) &&
-
-            (!mitre ||
-              event.mitre === mitre)
-          );
-        }
-      );
-
-    setResults(matched);
-
-    setHistory((prev) => [
-      query,
-      ...prev,
-    ]);
+    setResults(data);
   };
 
   return (
-    <div className="
-      bg-black
-      border
-      border-zinc-800
-      rounded-xl
-      p-6
-    ">
+    <div className="space-y-6">
 
-      <div className="
-        flex
-        gap-4
-        mb-8
-      ">
+      <h1 className="text-3xl font-bold text-white">
+        Threat Hunting Workbench
+      </h1>
+
+      <div className="flex gap-4">
 
         <input
           value={query}
-
-          onChange={(e) =>
-            setQuery(
-              e.target.value
-            )
-          }
-
-          className="
-            flex-1
-            bg-zinc-900
-            border
-            border-zinc-700
-            rounded-xl
-            p-4
-            text-green-400
-            font-mono
-            outline-none
-          "
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="username:root"
+          className="flex-1 bg-black border border-zinc-700 rounded p-3 text-white"
         />
 
         <button
-          onClick={runHunt}
-
-          className="
-            bg-red-600
-            hover:bg-red-700
-            px-8
-            rounded-xl
-            text-white
-            font-bold
-          "
+          onClick={hunt}
+          className="px-6 py-3 bg-cyan-600 rounded text-white"
         >
           Hunt
         </button>
 
       </div>
 
-      <div className="
-        grid
-        grid-cols-2
-        gap-8
-      ">
+      <div className="space-y-3">
 
-        <div>
+        {results.map((event, idx) => (
 
-          <h3 className="
-            text-white
-            text-2xl
-            font-bold
-            mb-6
-          ">
-            Search History
-          </h3>
+          <div
+            key={idx}
+            className="bg-zinc-900 border border-zinc-700 rounded p-4 text-white"
+          >
 
-          <div className="
-            space-y-3
-          ">
+            <div>
+              Event: {event.event_type}
+            </div>
 
-            {(history ?? []).map(
-              (
-                item,
-                index
-              ) => (
+            <div>
+              User: {event.username}
+            </div>
 
-                <div
-                  key={index}
+            <div>
+              IP: {event.source_ip}
+            </div>
 
-                  className="
-                    bg-zinc-950
-                    border
-                    border-zinc-800
-                    rounded-xl
-                    p-4
-                    text-green-400
-                    font-mono
-                    text-sm
-                  "
-                >
-                  {item}
-                </div>
-              )
-            )}
+            <div className="text-zinc-400 text-sm">
+              {event.raw}
+            </div>
 
           </div>
 
-        </div>
-
-        <div>
-
-          <h3 className="
-            text-red-400
-            text-2xl
-            font-bold
-            mb-6
-          ">
-            Hunt Results
-          </h3>
-
-          <div className="
-            space-y-4
-          ">
-
-            {(results ?? []).map(
-              (
-                result: any,
-                index
-              ) => (
-
-                <motion.div
-                  key={index}
-
-                  initial={{
-                    opacity: 0,
-                    y: 10,
-                  }}
-
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-
-                  className="
-                    bg-zinc-950
-                    border
-                    border-red-500/20
-                    rounded-xl
-                    p-5
-                  "
-                >
-
-                  <div className="
-                    flex
-                    justify-between
-                    items-center
-                    mb-3
-                  ">
-
-                    <h4 className="
-                      text-white
-                      font-bold
-                    ">
-                      {result.title}
-                    </h4>
-
-                    <span className="
-                      text-red-400
-                      font-bold
-                    ">
-                      {result.severity}
-                    </span>
-
-                  </div>
-
-                  <p className="
-                    text-zinc-400
-                    text-sm
-                  ">
-                    MITRE:
-                    {" "}
-                    {result.mitre}
-                  </p>
-
-                  <p className="
-                    text-zinc-400
-                    text-sm
-                  ">
-                    Source:
-                    {" "}
-                    {result.source_ip}
-                  </p>
-
-                  <p className="
-                    text-zinc-500
-                    text-xs
-                    mt-2
-                  ">
-                    {new Date(
-                      result.timestamp
-                    ).toLocaleString()}
-                  </p>
-
-                </motion.div>
-              )
-            )}
-
-          </div>
-
-        </div>
+        ))}
 
       </div>
 

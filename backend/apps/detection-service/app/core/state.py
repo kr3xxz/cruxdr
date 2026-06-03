@@ -1,0 +1,2 @@
+FAILED_LOGINS = {}
+INCIDENTS = []

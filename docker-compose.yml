@@ -412,3 +412,24 @@ services:
 
     restart: unless-stopped
 
+  # =========================================
+  # LOG INGESTION SERVICE
+  # =========================================
+
+  log-ingestion-service:
+    build:
+      context: ./backend/apps/log-ingestion-service
+
+    container_name: cruxdr-log-ingestion-service
+
+    ports:
+      - "8080:8000"
+
+    depends_on:
+      - kafka
+      - opensearch
+
+    networks:
+      - crux-network
+
+    restart: unless-stopped

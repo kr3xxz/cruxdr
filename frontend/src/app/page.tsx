@@ -15,7 +15,7 @@ import { MitreHeatmap } from "@/components/mitre/mitre-heatmap";
 
 import { CorrelatedIncidents } from "@/components/incidents/correlated-incidents";
 
-import ThreatHunting from "@/components/hunting/threat-hunting";
+import { ThreatHunting } from "@/components/hunting/threat-hunting";
 
 import { SigmaStudio } from "@/components/sigma/sigma-studio";
 
@@ -30,7 +30,6 @@ export default function DashboardPage() {
 
   const { activeTab } =
     useUIStore();
-console.log("ACTIVE TAB =", activeTab);
 
   const [alerts, setAlerts] =
     useState<any[]>([]);

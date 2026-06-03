@@ -2,7 +2,7 @@
 
 import {
   useEffect,
-  useState,
+  useState
 } from "react";
 
 export default function LogExplorer() {
@@ -10,90 +10,60 @@ export default function LogExplorer() {
   const [logs, setLogs] =
     useState<any[]>([]);
 
-  const [search, setSearch] =
+  const [query, setQuery] =
     useState("");
 
-  const fetchLogs =
-    async () => {
+  const fetchLogs = async () => {
 
-      try {
+    let url =
+      "http://localhost:8080/logs";
 
-        const res =
-          await fetch(
-            "http://localhost:8050/logs"
-          );
+    if (query.trim()) {
 
-        const data =
-          await res.json();
+      url =
+        `http://localhost:8080/search?q=${query}`;
+    }
 
-        setLogs(
-          Array.isArray(data)
-            ? [...data].reverse()
-            : []
-        );
+    try {
 
-      } catch (err) {
+      const response =
+        await fetch(url);
 
-        console.error(err);
-      }
-    };
+      const data =
+        await response.json();
+
+      setLogs(data.reverse());
+
+    } catch (err) {
+
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
 
     fetchLogs();
 
+  }, [query]);
+
+  useEffect(() => {
+
     const interval =
-      setInterval(
-        fetchLogs,
-        2000
-      );
+      setInterval(fetchLogs, 3000);
 
     return () =>
       clearInterval(interval);
 
-  }, []);
-
-  const filteredLogs =
-    logs.filter((log) =>
-      JSON.stringify(log)
-        .toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-    );
-
-  const severityColor =
-    (
-      severity: string
-    ) => {
-
-      switch (
-        severity?.toLowerCase()
-      ) {
-
-        case "critical":
-          return "bg-red-700";
-
-        case "high":
-          return "bg-orange-600";
-
-        case "medium":
-          return "bg-yellow-600";
-
-        default:
-          return "bg-cyan-700";
-      }
-    };
+  }, [query]);
 
   return (
 
     <div className="
+      bg-zinc-900
       border
-      border-cyan-500
-      rounded-2xl
-      bg-[#050816]
+      border-zinc-700
+      rounded-xl
       p-6
-      shadow-2xl
     ">
 
       <div className="
@@ -103,186 +73,103 @@ export default function LogExplorer() {
         mb-6
       ">
 
-        <div>
+        <h2 className="
+          text-white
+          text-2xl
+          font-bold
+        ">
+          SIEM Telemetry Explorer
+        </h2>
 
-          <h1 className="
-            text-4xl
-            font-bold
-            text-cyan-400
-          ">
-            Live Log Explorer
-          </h1>
-
-          <p className="
-            text-zinc-500
-            mt-1
-          ">
-            Real-time telemetry and security events
-          </p>
-
+        <div className="
+          text-green-400
+          font-semibold
+          text-sm
+        ">
+          LIVE
         </div>
-
-        <input
-          type="text"
-          placeholder="Search logs..."
-          value={search}
-          onChange={(e) =>
-            setSearch(
-              e.target.value
-            )
-          }
-          className="
-            bg-black
-            border
-            border-cyan-500
-            rounded-lg
-            px-4
-            py-2
-            text-white
-            w-72
-            outline-none
-          "
-        />
 
       </div>
 
+      <input
+        type="text"
+        placeholder="Search telemetry..."
+        value={query}
+        onChange={(e) =>
+          setQuery(e.target.value)
+        }
+        className="
+          w-full
+          bg-black
+          border
+          border-zinc-700
+          rounded-lg
+          p-3
+          text-white
+          mb-6
+        "
+      />
+
       <div className="
-        overflow-x-auto
+        space-y-3
+        max-h-[600px]
         overflow-y-auto
-        max-h-[520px]
-        rounded-xl
-        border
-        border-zinc-800
-        scrollbar-thin
-        scrollbar-thumb-cyan-500
-        scrollbar-track-black
       ">
 
-        <table className="
-          w-full
-          min-w-[900px]
-          text-left
-          border-collapse
-        ">
+        {logs.map((log, idx) => (
 
-          <thead className="
-            sticky
-            top-0
-            bg-[#050816]
-            z-10
-          ">
+          <div
+            key={idx}
+            className="
+              border
+              border-zinc-700
+              bg-black
+              rounded-lg
+              p-4
+            "
+          >
 
-            <tr className="
-              text-zinc-400
-              border-b
-              border-zinc-800
+            <div className="
+              flex
+              justify-between
+              mb-2
             ">
 
-              <th className="py-3 px-4">
-                Time
-              </th>
+              <span className="
+                text-red-400
+                font-bold
+              ">
+                {log.event_type}
+              </span>
 
-              <th className="px-4">
-                Host
-              </th>
+              <span className="
+                text-cyan-400
+                text-sm
+              ">
+                {log.source_ip}
+              </span>
 
-              <th className="px-4">
-                User
-              </th>
+            </div>
 
-              <th className="px-4">
-                Event
-              </th>
+            <div className="
+              text-white
+              text-sm
+              mb-2
+            ">
+              User: {log.username}
+            </div>
 
-              <th className="px-4">
-                Severity
-              </th>
+            <div className="
+              text-zinc-400
+              text-xs
+              break-all
+            ">
+              {log.raw}
+            </div>
 
-            </tr>
+          </div>
 
-          </thead>
-
-          <tbody>
-
-            {
-              filteredLogs.map(
-                (
-                  log,
-                  index
-                ) => (
-
-                  <tr
-                    key={index}
-                    className="
-                      border-b
-                      border-zinc-900
-                      hover:bg-zinc-950
-                      transition
-                    "
-                  >
-
-                    <td className="
-                      py-4
-                      px-4
-                      text-cyan-400
-                      font-mono
-                      text-sm
-                      whitespace-nowrap
-                    ">
-                      {
-                        log.timestamp
-                          ?.split(" ")[1]
-                      }
-                    </td>
-
-                    <td className="
-                      px-4
-                      text-yellow-400
-                      font-bold
-                    ">
-                      {log.host}
-                    </td>
-
-                    <td className="
-                      px-4
-                      text-zinc-300
-                    ">
-                      {log.user}
-                    </td>
-
-                    <td className="
-                      px-4
-                      text-red-300
-                    ">
-                      {log.message}
-                    </td>
-
-                    <td className="px-4">
-
-                      <span className={`
-                        px-3
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-bold
-                        text-white
-                        ${severityColor(
-                          log.severity
-                        )}
-                      `}>
-                        {log.severity}
-                      </span>
-
-                    </td>
-
-                  </tr>
-                )
-              )
-            }
-
-          </tbody>
-
-        </table>
+        ))}
 
       </div>
 

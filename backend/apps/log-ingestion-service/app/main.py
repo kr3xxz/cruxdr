@@ -1,3 +1,4 @@
+from app.api.sigma import router as sigma_router
 from app.api.hunt import router as hunt_router
 from app.api.incidents import router as incident_router
 from fastapi import FastAPI
@@ -18,5 +19,6 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(sigma_router)
 app.include_router(hunt_router)
 app.include_router(incident_router)

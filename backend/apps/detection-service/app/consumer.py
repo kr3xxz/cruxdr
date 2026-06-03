@@ -1,3 +1,5 @@
+from app.core.sigma_loader import load_sigma_rules
+RULES = load_sigma_rules()
 print("DETECTION SERVICE STARTED")
 from app.core.incidents import save_incident
 from app.core.attack_chain import ATTACK_CHAINS
@@ -17,6 +19,9 @@ consumer = KafkaConsumer(
 for message in consumer:
 
     event = message.value
+    for rule in RULES:
+        if event.get("event_type") == rule["detection"]["event_type"]:
+            print(f"[SIGMA MATCH] {rule['title']}", flush=True)
     if event.get("event_type") == "failed_login":
         technique = "T1110"
     elif event.get("event_type") == "successful_login":

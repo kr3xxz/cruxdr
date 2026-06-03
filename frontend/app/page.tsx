@@ -1,5 +1,6 @@
 "use client";
 
+import SigmaUpload from "@/components/sigma/sigma-upload";
 import { useState } from "react";
 
 import LogExplorer from "@/components/logs/log-explorer";
@@ -280,7 +281,7 @@ console.log("ACTIVE TAB =", activeTab);
             text-2xl
             font-bold
           ">
-            CruXDR Settings
+            <SigmaUpload />
           </div>
         )}
 

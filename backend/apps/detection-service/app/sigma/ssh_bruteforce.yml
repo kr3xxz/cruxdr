@@ -1,0 +1,10 @@
+title: SSH Brute Force
+id: sigma-001
+
+detection:
+  event_type: failed_login
+
+severity: HIGH
+
+mitre_attack:
+  - T1110

@@ -295,6 +295,10 @@ services:
     build:
       context: ./backend/apps/soar-service
     container_name: crux-soar-service
+
+    ports:
+      - "8061:8000"
+
     env_file:
       - .env
     depends_on:

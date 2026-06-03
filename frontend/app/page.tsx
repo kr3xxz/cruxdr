@@ -3,6 +3,7 @@
 import LogExplorer from "@/components/logs/log-explorer";
 
 import { Sidebar } from "@/components/layout/sidebar";
+import { AIPanel } from "@/components/incidents/ai-panel";
 
 import { SOCCommandCenter } from "@/components/soc/soc-command-center";
 
@@ -97,13 +98,7 @@ export default function DashboardPage() {
         {activeTab ===
           "ai-assistant" && (
 
-          <div className="
-            text-white
-            text-2xl
-            font-bold
-          ">
-            AI Assistant
-          </div>
+          <AIPanel />
         )}
 
         {activeTab ===

@@ -1,65 +1,272 @@
 "use client";
 
-import { useState } from "react";
+import { motion } from "framer-motion";
+
+import { useEventStore } from "@/store/event-store";
 
 export function AIPanel() {
-  const [question, setQuestion] =
-    useState("");
 
-  const [response, setResponse] =
-    useState("");
-
-  const askAI = async () => {
-    const res = await fetch(
-      "http://localhost:8001/api/v1/ai/chat",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          question,
-        }),
-      }
+  const events =
+    useEventStore(
+      (state) => state.events
     );
 
-    const data = await res.json();
+  const latest =
+    events[0];
 
-    setResponse(data.response);
-  };
+  const severity =
+    latest?.severity ||
+    "medium";
+
+  const attack =
+    latest?.attack_type ||
+    "Suspicious activity";
+
+  const recommendation =
+    severity === "critical"
+      ? "Immediately isolate affected systems and block malicious indicators."
+      : severity === "high"
+      ? "Investigate suspicious activity and monitor lateral movement."
+      : "Monitor affected systems.";
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-      <h2 className="text-white text-xl font-semibold mb-4">
+
+    <div className="
+      bg-black
+      border
+      border-zinc-800
+      rounded-xl
+      p-6
+    ">
+
+      <h2 className="
+        text-white
+        text-4xl
+        font-bold
+        mb-8
+      ">
         AI SOC Assistant
       </h2>
 
-      <textarea
-        value={question}
-        onChange={(e) =>
-          setQuestion(e.target.value)
-        }
-        placeholder="Ask about incidents..."
-        className="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-3 text-white"
-      />
+      <div className="
+        grid
+        grid-cols-2
+        gap-8
+      ">
 
-      <button
-        onClick={askAI}
-        className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg"
-      >
-        Ask AI
-      </button>
+        <motion.div
 
-      {response && (
-        <div className="mt-6 bg-zinc-950 rounded-lg p-4">
-          <p className="text-zinc-300 whitespace-pre-wrap">
-            {response}
-          </p>
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+
+          className="
+            bg-zinc-950
+            border
+            border-red-500/30
+            rounded-xl
+            p-6
+          "
+        >
+
+          <h3 className="
+            text-red-400
+            text-2xl
+            font-bold
+            mb-6
+          ">
+            Threat Analysis
+          </h3>
+
+          <div className="
+            space-y-4
+          ">
+
+            <div>
+
+              <p className="
+                text-zinc-400
+                mb-2
+              ">
+                Threat Severity
+              </p>
+
+              <p className="
+                text-white
+                text-4xl
+                font-bold
+                uppercase
+              ">
+                {severity}
+              </p>
+
+            </div>
+
+            <div>
+
+              <p className="
+                text-zinc-400
+                mb-2
+              ">
+                AI Summary
+              </p>
+
+              <p className="
+                text-white
+                text-lg
+              ">
+                {attack} activity detected across monitored assets.
+              </p>
+
+            </div>
+
+          </div>
+
+        </motion.div>
+
+        <motion.div
+
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+
+          className="
+            bg-zinc-950
+            border
+            border-red-500/30
+            rounded-xl
+            p-6
+          "
+        >
+
+          <h3 className="
+            text-red-400
+            text-2xl
+            font-bold
+            mb-6
+          ">
+            AI Recommendations
+          </h3>
+
+          <div className="
+            bg-black
+            rounded-xl
+            p-5
+            text-zinc-200
+            leading-7
+          ">
+
+            {recommendation}
+
+          </div>
+
+        </motion.div>
+
+      </div>
+
+      <div className="
+        mt-10
+      ">
+
+        <h3 className="
+          text-white
+          text-3xl
+          font-bold
+          mb-6
+        ">
+          Live Security Telemetry
+        </h3>
+
+        <div className="
+          space-y-4
+        ">
+
+          {events.map(
+            (
+              event,
+              index
+            ) => (
+
+              <motion.div
+
+                key={index}
+
+                initial={{
+                  opacity: 0,
+                  x: -10,
+                }}
+
+                animate={{
+                  opacity: 1,
+                  x: 0,
+                }}
+
+                className="
+                  bg-zinc-950
+                  border
+                  border-zinc-800
+                  rounded-xl
+                  p-5
+                  flex
+                  justify-between
+                  items-start
+                "
+              >
+
+                <div>
+
+                  <h4 className="
+                    text-white
+                    text-2xl
+                    font-bold
+                    mb-3
+                  ">
+                    {event.attack_type}
+                  </h4>
+
+                  <p className="
+                    text-zinc-400
+                  ">
+                    MITRE: {event.mitre}
+                  </p>
+
+                  <p className="
+                    text-zinc-400
+                  ">
+                    Source: {event.source}
+                  </p>
+
+                </div>
+
+                <div className="
+                  text-red-400
+                  font-bold
+                  text-2xl
+                  uppercase
+                ">
+                  {event.severity}
+                </div>
+
+              </motion.div>
+            )
+          )}
+
         </div>
-      )}
+
+      </div>
+
     </div>
   );
 }

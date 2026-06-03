@@ -1,4 +1,5 @@
 import asyncio
+import requests
 
 from app.core.consumer import consumer
 from app.data.store import incidents_store
@@ -60,6 +61,11 @@ class IncidentProcessor:
 
                     GraphBuilder.build(
                         alert
+                    )
+
+                    requests.post(
+                        "http://soar-service:8000/responses",
+                        json=incident
                     )
 
                     print(

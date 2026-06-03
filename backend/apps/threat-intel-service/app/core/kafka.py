@@ -7,7 +7,7 @@ from kafka import KafkaProducer
 consumer = KafkaConsumer(
     "siem-incidents",
 
-    bootstrap_servers="kafka:9092",
+    bootstrap_servers="crux-kafka:9092",
 
     value_deserializer=lambda m:
     json.loads(
@@ -24,7 +24,7 @@ consumer = KafkaConsumer(
 
 producer = KafkaProducer(
 
-    bootstrap_servers="kafka:9092",
+    bootstrap_servers="crux-kafka:9092",
 
     value_serializer=lambda v:
     json.dumps(v).encode("utf-8"),

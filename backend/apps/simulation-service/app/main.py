@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.simulate import router
+
 app = FastAPI(
     title="CruXDR Simulation Service"
 )
@@ -13,8 +15,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(router)
+
 @app.get("/")
 async def root():
+
     return {
         "service": "simulation-service"
     }

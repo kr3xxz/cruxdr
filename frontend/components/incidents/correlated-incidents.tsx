@@ -1,168 +1,225 @@
 "use client";
 
-import { motion } from "framer-motion";
-
-import { useEventStore } from "@/store/event-store";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 export function CorrelatedIncidents() {
 
-  const incidents =
-    useEventStore(
-      (state) => state.events
-    );
+  const [incidents, setIncidents] =
+    useState<any[]>([]);
+
+  const [selected, setSelected] =
+    useState<any>(null);
+
+  const fetchIncidents =
+    async () => {
+
+      const res =
+        await fetch(
+          "http://localhost:8030/incidents"
+        );
+
+      const data =
+        await res.json();
+
+      setIncidents(
+        Array.isArray(data)
+          ? data
+          : []
+      );
+    };
+
+  useEffect(() => {
+
+    fetchIncidents();
+
+    const interval =
+      setInterval(
+        fetchIncidents,
+        2000
+      );
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
 
   return (
-    <div className="
-      bg-zinc-900
-      border
-      border-zinc-800
-      rounded-xl
-      p-6
-    ">
 
-      <h2 className="
-        text-white
-        text-3xl
-        font-bold
-        mb-8
-      ">
-        Correlated Incidents
-      </h2>
+    <div className="grid grid-cols-3 gap-6">
 
-      <div className="
-        space-y-5
-      ">
+      <div className="col-span-1 border border-red-500 rounded-xl bg-[#050816] p-5">
 
-        {(incidents ?? []).map(
-          (
-            incident,
-            index
-          ) => (
+        <h2 className="text-red-400 text-3xl font-bold mb-6">
+          Incidents
+        </h2>
 
-            <motion.div
-              key={index}
+        <div className="space-y-4">
 
-              initial={{
-                opacity: 0,
-                y: 10,
-              }}
+          {
+            incidents.map(
+              (
+                incident,
+                index
+              ) => (
 
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
+                <div
+                  key={index}
+                  onClick={() =>
+                    setSelected(
+                      incident
+                    )
+                  }
+                  className="cursor-pointer border border-zinc-800 hover:border-red-500 rounded-lg p-4 bg-black"
+                >
 
-              className="
-                bg-black
-                border
-                border-red-500/20
-                rounded-xl
-                p-5
-              "
-            >
+                  <div className="text-white font-bold">
+                    {incident.title}
+                  </div>
 
-              <div className="
-                flex
-                justify-between
-                items-center
-                mb-4
-              ">
+                  <div className="text-red-400 text-sm mt-2">
+                    Severity:
+                    {" "}
+                    {incident.severity}
+                  </div>
+
+                  <div className="text-cyan-400 text-sm">
+                    MITRE:
+                    {" "}
+                    {incident.mitre}
+                  </div>
+
+                </div>
+              )
+            )
+          }
+
+        </div>
+
+      </div>
+
+      <div className="col-span-2 border border-cyan-500 rounded-xl bg-[#050816] p-6">
+
+        {
+          selected ? (
+
+            <div>
+
+              <h2 className="text-cyan-400 text-4xl font-bold mb-6">
+                Investigation
+              </h2>
+
+              <div className="space-y-5">
+
+                <div>
+                  <div className="text-zinc-400">
+                    Host
+                  </div>
+
+                  <div className="text-white text-xl">
+                    {selected.host}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-zinc-400">
+                    User
+                  </div>
+
+                  <div className="text-white text-xl">
+                    {selected.user}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-zinc-400">
+                    MITRE Technique
+                  </div>
+
+                  <div className="text-red-400 text-xl">
+                    {selected.mitre}
+                  </div>
+                </div>
 
                 <div>
 
-                  <h3 className="
-                    text-white
-                    text-xl
-                    font-bold
-                  ">
-                    {incident.title}
-                  </h3>
+                  <div className="text-zinc-400 mb-3">
+                    Timeline
+                  </div>
 
-                  <p className="
-                    text-zinc-400
-                    text-sm
-                    mt-1
-                  ">
-                    Source IP:
-                    {" "}
-                    {incident.source_ip}
-                  </p>
+                  <div className="space-y-3">
 
-                </div>
+                    {
+                      selected.timeline.map(
+                        (
+                          item: any,
+                          idx: number
+                        ) => (
 
-                <span className="
-                  bg-red-600
-                  text-white
-                  px-4
-                  py-2
-                  rounded-lg
-                  font-bold
-                  uppercase
-                ">
-                  {incident.severity}
-                </span>
+                          <div
+                            key={idx}
+                            className="border border-zinc-800 rounded-lg p-4 bg-black"
+                          >
 
-              </div>
+                            <div className="text-cyan-400 font-bold">
+                              {item.step}
+                            </div>
 
-              <div className="
-                grid
-                grid-cols-2
-                gap-4
-              ">
+                            <div className="text-zinc-300 mt-2">
+                              {item.description}
+                            </div>
 
-                <div className="
-                  bg-zinc-950
-                  rounded-lg
-                  p-4
-                ">
+                          </div>
+                        )
+                      )
+                    }
 
-                  <p className="
-                    text-zinc-400
-                    text-sm
-                    mb-2
-                  ">
-                    MITRE Technique
-                  </p>
-
-                  <p className="
-                    text-red-400
-                    font-semibold
-                  ">
-                    T1110
-                  </p>
+                  </div>
 
                 </div>
 
-                <div className="
-                  bg-zinc-950
-                  rounded-lg
-                  p-4
-                ">
+                <div>
 
-                  <p className="
-                    text-zinc-400
-                    text-sm
-                    mb-2
-                  ">
-                    Detection Time
-                  </p>
+                  <div className="text-zinc-400 mb-3">
+                    Indicators of Compromise
+                  </div>
 
-                  <p className="
-                    text-white
-                    font-semibold
-                  ">
-                    {new Date(
-                      incident.timestamp
-                    ).toLocaleTimeString()}
-                  </p>
+                  <div className="flex gap-3 flex-wrap">
+
+                    {
+                      selected.iocs.map(
+                        (
+                          ioc: string,
+                          idx: number
+                        ) => (
+
+                          <div
+                            key={idx}
+                            className="bg-red-700 px-4 py-2 rounded-full text-sm"
+                          >
+                            {ioc}
+                          </div>
+                        )
+                      )
+                    }
+
+                  </div>
 
                 </div>
 
               </div>
 
-            </motion.div>
+            </div>
+
+          ) : (
+
+            <div className="text-zinc-500 text-xl">
+              Select an incident to investigate
+            </div>
           )
-        )}
+        }
 
       </div>
 

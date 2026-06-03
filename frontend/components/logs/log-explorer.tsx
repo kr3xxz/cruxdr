@@ -5,182 +5,286 @@ import {
   useState,
 } from "react";
 
-import { motion } from "framer-motion";
+export default function LogExplorer() {
 
-import { useEventStore } from "@/store/event-store";
+  const [logs, setLogs] =
+    useState<any[]>([]);
 
-export function LogExplorer() {
+  const [search, setSearch] =
+    useState("");
 
-  const events =
-    useEventStore(
-      (state) => state.events
-    );
+  const fetchLogs =
+    async () => {
 
-  const [analysis, setAnalysis] =
-    useState(
-      "Awaiting threat telemetry..."
-    );
+      try {
+
+        const res =
+          await fetch(
+            "http://localhost:8050/logs"
+          );
+
+        const data =
+          await res.json();
+
+        setLogs(
+          Array.isArray(data)
+            ? [...data].reverse()
+            : []
+        );
+
+      } catch (err) {
+
+        console.error(err);
+      }
+    };
 
   useEffect(() => {
 
-    if (
-      events.length === 0
-    ) {
-      return;
-    }
+    fetchLogs();
 
-    const latest =
-      events[0];
+    const interval =
+      setInterval(
+        fetchLogs,
+        2000
+      );
 
-    if (
-      latest.attack_type ===
-      "ransomware"
-    ) {
+    return () =>
+      clearInterval(interval);
 
-      setAnalysis(`
-AI Threat Assessment
+  }, []);
 
-Ransomware behavior detected.
+  const filteredLogs =
+    logs.filter((log) =>
+      JSON.stringify(log)
+        .toLowerCase()
+        .includes(
+          search.toLowerCase()
+        )
+    );
 
-MITRE Mapping:
-T1486 — Data Encrypted for Impact
+  const severityColor =
+    (
+      severity: string
+    ) => {
 
-Risk Level:
-CRITICAL
+      switch (
+        severity?.toLowerCase()
+      ) {
 
-Recommended Actions:
-• Isolate infected endpoints
-• Disable SMB lateral movement
-• Trigger emergency backup validation
-• Block suspicious PowerShell execution
+        case "critical":
+          return "bg-red-700";
 
-Business Impact:
-Potential operational disruption and mass encryption activity detected.
-      `);
+        case "high":
+          return "bg-orange-600";
 
-    } else if (
-      latest.attack_type ===
-      "brute_force"
-    ) {
+        case "medium":
+          return "bg-yellow-600";
 
-      setAnalysis(`
-AI Threat Assessment
-
-Brute-force authentication activity detected.
-
-MITRE Mapping:
-T1110 — Brute Force
-
-Risk Level:
-HIGH
-
-Recommended Actions:
-• Lock suspicious accounts
-• Enable MFA enforcement
-• Block offending IP addresses
-• Increase authentication monitoring
-
-Business Impact:
-Potential credential compromise attempt detected.
-      `);
-
-    } else if (
-      latest.attack_type ===
-      "phishing"
-    ) {
-
-      setAnalysis(`
-AI Threat Assessment
-
-Phishing-related indicators detected.
-
-MITRE Mapping:
-T1566 — Phishing
-
-Risk Level:
-HIGH
-
-Recommended Actions:
-• Quarantine suspicious emails
-• Reset affected credentials
-• Alert impacted users
-• Enable URL filtering
-
-Business Impact:
-Possible credential theft and malware delivery attempt.
-      `);
-
-    } else {
-
-      setAnalysis(`
-AI SOC analysis completed.
-
-Suspicious activity observed.
-
-Further investigation recommended.
-      `);
-
-    }
-
-  }, [events]);
+        default:
+          return "bg-cyan-700";
+      }
+    };
 
   return (
+
     <div className="
-      bg-black
       border
-      border-zinc-800
-      rounded-xl
+      border-cyan-500
+      rounded-2xl
+      bg-[#050816]
       p-6
+      shadow-2xl
     ">
 
-      <h2 className="
-        text-white
-        text-4xl
-        font-bold
-        mb-8
+      <div className="
+        flex
+        justify-between
+        items-center
+        mb-6
       ">
-        AI SOC Assistant
-      </h2>
 
-      <motion.div
+        <div>
 
-        initial={{
-          opacity: 0,
-          y: 10,
-        }}
+          <h1 className="
+            text-4xl
+            font-bold
+            text-cyan-400
+          ">
+            Live Log Explorer
+          </h1>
 
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
+          <p className="
+            text-zinc-500
+            mt-1
+          ">
+            Real-time telemetry and security events
+          </p>
 
-        className="
-          bg-zinc-950
-          border
-          border-red-500/20
-          rounded-xl
-          p-6
-        "
-      >
-
-        <h3 className="
-          text-red-400
-          text-2xl
-          font-bold
-          mb-6
-        ">
-          AI Threat Intelligence
-        </h3>
-
-        <div className="
-          whitespace-pre-wrap
-          text-zinc-300
-          leading-relaxed
-        ">
-          {analysis}
         </div>
 
-      </motion.div>
+        <input
+          type="text"
+          placeholder="Search logs..."
+          value={search}
+          onChange={(e) =>
+            setSearch(
+              e.target.value
+            )
+          }
+          className="
+            bg-black
+            border
+            border-cyan-500
+            rounded-lg
+            px-4
+            py-2
+            text-white
+            w-72
+            outline-none
+          "
+        />
+
+      </div>
+
+      <div className="
+        overflow-x-auto
+        overflow-y-auto
+        max-h-[520px]
+        rounded-xl
+        border
+        border-zinc-800
+        scrollbar-thin
+        scrollbar-thumb-cyan-500
+        scrollbar-track-black
+      ">
+
+        <table className="
+          w-full
+          min-w-[900px]
+          text-left
+          border-collapse
+        ">
+
+          <thead className="
+            sticky
+            top-0
+            bg-[#050816]
+            z-10
+          ">
+
+            <tr className="
+              text-zinc-400
+              border-b
+              border-zinc-800
+            ">
+
+              <th className="py-3 px-4">
+                Time
+              </th>
+
+              <th className="px-4">
+                Host
+              </th>
+
+              <th className="px-4">
+                User
+              </th>
+
+              <th className="px-4">
+                Event
+              </th>
+
+              <th className="px-4">
+                Severity
+              </th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {
+              filteredLogs.map(
+                (
+                  log,
+                  index
+                ) => (
+
+                  <tr
+                    key={index}
+                    className="
+                      border-b
+                      border-zinc-900
+                      hover:bg-zinc-950
+                      transition
+                    "
+                  >
+
+                    <td className="
+                      py-4
+                      px-4
+                      text-cyan-400
+                      font-mono
+                      text-sm
+                      whitespace-nowrap
+                    ">
+                      {
+                        log.timestamp
+                          ?.split(" ")[1]
+                      }
+                    </td>
+
+                    <td className="
+                      px-4
+                      text-yellow-400
+                      font-bold
+                    ">
+                      {log.host}
+                    </td>
+
+                    <td className="
+                      px-4
+                      text-zinc-300
+                    ">
+                      {log.user}
+                    </td>
+
+                    <td className="
+                      px-4
+                      text-red-300
+                    ">
+                      {log.message}
+                    </td>
+
+                    <td className="px-4">
+
+                      <span className={`
+                        px-3
+                        py-1
+                        rounded-full
+                        text-xs
+                        font-bold
+                        text-white
+                        ${severityColor(
+                          log.severity
+                        )}
+                      `}>
+                        {log.severity}
+                      </span>
+
+                    </td>
+
+                  </tr>
+                )
+              )
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
 
     </div>
   );

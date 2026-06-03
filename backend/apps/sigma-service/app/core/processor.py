@@ -1,12 +1,16 @@
 import asyncio
+import json
+import traceback
 
-from app.core.kafka import (
-    consumer,
+from kafka import KafkaConsumer
+
+from app.data.store import (
+    logs_store,
+    alerts_store,
 )
 
-from app.core.matcher import (
-    SigmaMatcher,
-)
+from app.core.matcher import SigmaMatcher
+from app.core.producer import get_producer
 
 
 class SigmaProcessor:
@@ -14,28 +18,59 @@ class SigmaProcessor:
     @staticmethod
     async def start():
 
-        while True:
+        try:
 
-            messages = consumer.poll(
-                timeout_ms=1000
+            print("[*] SIGMA PROCESSOR STARTED")
+
+            consumer = KafkaConsumer(
+                "logs",
+                bootstrap_servers="kafka:9092",
+                value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+                auto_offset_reset="latest",
+                group_id=None
             )
 
-            for tp, batch in messages.items():
+            print("[*] KAFKA CONNECTED")
 
-                for message in batch:
+            producer = get_producer()
 
-                    event = message.value
+            while True:
 
-                    matches = (
-                        SigmaMatcher.match(
-                            event
-                        )
-                    )
+                messages = consumer.poll(timeout_ms=100)
 
-                    for match in matches:
+                for tp, records in messages.items():
 
-                        print(
-                            f"[SIGMA MATCH] {match}"
-                        )
+                    for message in records:
 
-            await asyncio.sleep(1)
+                        event = message.value
+
+                        print(f"[LOG] {event}")
+
+                        logs_store.append(event)
+
+                        logs_store[:] = logs_store[-200:]
+
+                        alerts = SigmaMatcher.match(event)
+
+                        for alert in alerts:
+
+                            print(f"[ALERT] {alert}")
+
+                            alerts_store.append(alert)
+
+                            alerts_store[:] = alerts_store[-100:]
+
+                            producer.send(
+                                "alerts",
+                                alert
+                            )
+
+                await asyncio.sleep(0.5)
+
+        except Exception as e:
+
+            print("[!!!] SIGMA PROCESSOR CRASHED")
+
+            print(str(e))
+
+            traceback.print_exc()

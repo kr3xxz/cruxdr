@@ -1,60 +1,58 @@
-from app.store.rules import (
-    sigma_rules,
-)
-
-from app.store.rules import (
-    sigma_alerts,
-)
-
-
 class SigmaMatcher:
 
     @staticmethod
     def match(event):
 
-        matched = []
+        alerts = []
 
-        for rule in sigma_rules:
+        process_name = event.get(
+            "process_name",
+            ""
+        )
 
-            keywords = (
-                rule["detection"]
-                .get("keywords", [])
+        event_id = event.get(
+            "event_id"
+        )
+
+        message = event.get(
+            "message",
+            ""
+        )
+
+        if (
+            process_name == "powershell.exe"
+        ):
+
+            alerts.append(
+                {
+                    "title": "Suspicious PowerShell Activity",
+                    "severity": "high",
+                    "event": event,
+                }
             )
 
-            for keyword in keywords:
+        if (
+            event_id == 4625
+        ):
 
-                if (
-                    keyword.lower()
-                    in str(event).lower()
-                ):
+            alerts.append(
+                {
+                    "title": "Failed Login Attempt",
+                    "severity": "medium",
+                    "event": event,
+                }
+            )
 
-                    alert = {
-                        "rule_title":
-                        rule["title"],
+        if (
+            "encryption" in message.lower()
+        ):
 
-                        "severity":
-                        rule["severity"],
+            alerts.append(
+                {
+                    "title": "Possible Ransomware Detected",
+                    "severity": "critical",
+                    "event": event,
+                }
+            )
 
-                        "mitre":
-                        rule["mitre"][
-                            "technique"
-                        ],
-
-                        "event":
-                        event,
-                    }
-
-                    sigma_alerts.insert(
-                        0,
-                        alert,
-                    )
-
-                    del sigma_alerts[200:]
-
-                    matched.append(
-                        alert
-                    )
-
-                    break
-
-        return matched
+        return alerts

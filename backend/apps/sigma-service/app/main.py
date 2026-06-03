@@ -1,7 +1,13 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.rules import router
+from app.api.logs import router as logs_router
+
+from app.core.processor import SigmaProcessor
+
 
 app = FastAPI(
     title="CruXDR Sigma Service"
@@ -16,9 +22,24 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(logs_router)
+
+
+@app.on_event("startup")
+async def startup():
+
+    print("[*] STARTUP EVENT FIRED")
+
+    asyncio.create_task(
+        SigmaProcessor.start()
+    )
+
+    print("[*] SIGMA TASK CREATED")
+
 
 @app.get("/")
 async def root():
+
     return {
         "service": "sigma-service"
     }

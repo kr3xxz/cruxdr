@@ -1,111 +1,158 @@
 "use client";
 
-import ReactFlow, {
-  Background,
-  Controls,
-} from "reactflow";
-
-import "reactflow/dist/style.css";
-
-import { useEventStore } from "@/store/event-store";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 export function LiveAttackGraph() {
 
-  const events =
-    useEventStore(
-      (state) => state.events
-    );
+  const [graph, setGraph] =
+    useState<any>(null);
 
-  const nodes =
-    (events ?? []).map(
-      (
-        event: any,
-        index
-      ) => ({
+  const fetchGraph =
+    async () => {
 
-        id: String(index),
+      try {
 
-        data: {
-          label:
-            `${event.attack_type}
-             (${event.mitre})`,
-        },
+        const res =
+          await fetch(
+            "http://localhost:8030/graph"
+          );
 
-        position: {
-          x: 200 * (index % 3),
-          y: 120 * index,
-        },
+        const data =
+          await res.json();
 
-        style: {
+        setGraph(data);
 
-          background: "#7f1d1d",
+      } catch (err) {
 
-          color: "white",
+        console.error(err);
+      }
+    };
 
-          border:
-            "1px solid #ef4444",
+  useEffect(() => {
 
-          padding: 10,
+    fetchGraph();
 
-          borderRadius: 12,
-        },
-      })
-    );
+    const interval =
+      setInterval(
+        fetchGraph,
+        2000
+      );
 
-  const edges =
-    (events ?? []).slice(1).map(
-      (
-        _: any,
-        index
-      ) => ({
+    return () =>
+      clearInterval(interval);
 
-        id:
-          `e${index}-${index + 1}`,
-
-        source:
-          String(index),
-
-        target:
-          String(index + 1),
-
-        animated: true,
-
-        style: {
-          stroke: "#ef4444",
-        },
-      })
-    );
+  }, []);
 
   return (
+
     <div className="
-      bg-zinc-900
       border
-      border-zinc-800
+      border-cyan-500
       rounded-xl
-      p-4
-      h-[700px]
+      bg-[#050816]
+      p-6
     ">
 
       <h2 className="
-        text-white
+        text-cyan-400
         text-3xl
         font-bold
-        mb-4
+        mb-6
       ">
-        Live Attack Correlation Graph
+        Live Attack Graph
       </h2>
 
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        fitView
-      >
+      {
 
-        <Background />
+        graph &&
+        graph.nodes ? (
 
-        <Controls />
+          <div className="
+            flex
+            items-center
+            gap-6
+            overflow-x-auto
+          ">
 
-      </ReactFlow>
+            {
+
+              graph.nodes.map(
+                (
+                  node: any,
+                  idx: number
+                ) => (
+
+                  <div
+                    key={idx}
+                    className="
+                      flex
+                      items-center
+                      gap-6
+                    "
+                  >
+
+                    <div className="
+                      min-w-[180px]
+                      bg-black
+                      border
+                      border-red-500
+                      rounded-xl
+                      p-5
+                    ">
+
+                      <div className="
+                        text-zinc-400
+                        text-sm
+                        capitalize
+                      ">
+                        {node.type}
+                      </div>
+
+                      <div className="
+                        text-white
+                        font-bold
+                        mt-2
+                        break-all
+                      ">
+                        {node.id}
+                      </div>
+
+                    </div>
+
+                    {
+
+                      idx <
+                      graph.nodes.length - 1 && (
+
+                        <div className="
+                          text-red-500
+                          text-4xl
+                          font-bold
+                        ">
+                          →
+                        </div>
+                      )
+                    }
+
+                  </div>
+                )
+              )
+            }
+
+          </div>
+
+        ) : (
+
+          <div className="
+            text-zinc-500
+          ">
+            Waiting for attack telemetry...
+          </div>
+        )
+      }
 
     </div>
   );

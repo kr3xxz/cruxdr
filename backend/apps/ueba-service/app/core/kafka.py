@@ -21,7 +21,7 @@ consumer = KafkaConsumer(
 
     "user-events",
 
-    bootstrap_servers="kafka:9092",
+    bootstrap_servers="crux-kafka:9092",
 
     value_deserializer=
     safe_deserializer,
@@ -36,7 +36,7 @@ consumer = KafkaConsumer(
 
 producer = KafkaProducer(
 
-    bootstrap_servers="kafka:9092",
+    bootstrap_servers="crux-kafka:9092",
 
     value_serializer=lambda v:
     json.dumps(v).encode("utf-8"),

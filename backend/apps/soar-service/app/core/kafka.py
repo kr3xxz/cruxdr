@@ -21,7 +21,7 @@ consumer = KafkaConsumer(
     "siem-enriched-incidents",
     "ueba-alerts",
 
-    bootstrap_servers="kafka:9092",
+    bootstrap_servers="crux-kafka:9092",
 
     value_deserializer=
     safe_deserializer,

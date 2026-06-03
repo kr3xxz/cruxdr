@@ -4,8 +4,6 @@ import { useState } from "react";
 
 import { motion } from "framer-motion";
 
-import { API } from "@/lib/api";
-
 import { useAlertStore } from "@/store/alert-store";
 import { useEventStore } from "@/store/event-store";
 import { useSecurityStore } from "@/store/security-store";
@@ -72,12 +70,25 @@ export function SOCCommandCenter() {
         return;
       }
 
-      await fetch(
-        `${API.control}/api/launch/${attack}`,
-        {
-          method: "POST",
-        }
-      );
+      try {
+
+        const response =
+          await fetch(
+            `http://localhost:8010/${attack}`,
+            {
+              method: "POST",
+            }
+          );
+
+        const data =
+          await response.json();
+
+        console.log(data);
+
+      } catch (err) {
+
+        console.error(err);
+      }
 
       let severity =
         "medium";
@@ -109,8 +120,31 @@ export function SOCCommandCenter() {
           "T1110";
       }
 
+      if (
+        attack ===
+        "exfiltration"
+      ) {
+
+        severity =
+          "critical";
+
+        mitre =
+          "T1041";
+      }
+
+      if (
+        attack ===
+        "phishing"
+      ) {
+
+        severity =
+          "high";
+
+        mitre =
+          "T1566";
+      }
+
       addAlert({
-        title: attack,
         title: attack,
         severity,
       });
@@ -131,6 +165,26 @@ export function SOCCommandCenter() {
           new Date()
             .toISOString(),
       });
+
+      window.dispatchEvent(
+        new Event("logs-updated")
+      );
+
+      setTimeout(() => {
+
+        window.dispatchEvent(
+          new Event("logs-updated")
+        );
+
+      }, 500);
+
+      setTimeout(() => {
+
+        window.dispatchEvent(
+          new Event("logs-updated")
+        );
+
+      }, 1500);
 
       setLogs((prev) => [
 

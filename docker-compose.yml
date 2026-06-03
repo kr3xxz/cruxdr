@@ -314,7 +314,7 @@ services:
     container_name: cruxdr-simulation-service
 
     ports:
-      - "8010:8010"
+      - "8010:8000"
 
     depends_on:
       - kafka

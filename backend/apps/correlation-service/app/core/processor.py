@@ -1,34 +1,88 @@
 import asyncio
 
-from app.core.kafka import (
-    consumer,
-)
-
-from app.engine.correlation import (
-    CorrelationEngine,
-)
+from app.core.consumer import consumer
+from app.data.store import incidents_store
+from app.core.graph_builder import GraphBuilder
 
 
-class EventProcessor:
+class IncidentProcessor:
 
     @staticmethod
     async def start():
 
+        print("[*] INCIDENT PROCESSOR STARTED")
+
         while True:
 
-            for message in consumer:
+            messages = consumer.poll(timeout_ms=100)
 
-                event = message.value
+            for tp, records in messages.items():
 
-                incident = (
-                    CorrelationEngine
-                    .process(event)
-                )
+                for message in records:
 
-                if incident:
+                    alert = message.value
 
-                    print(
-                        f"[CORRELATED] {incident}"
+                    incident = {
+                        "title": alert.get("title"),
+                        "severity": alert.get("severity"),
+                        "host": alert["event"].get("host"),
+                        "user": alert["event"].get("user"),
+                        "mitre": IncidentProcessor.map_mitre(alert),
+
+                        "timeline": [
+                            {
+                                "step": "Detection",
+                                "description": alert["event"].get(
+                                    "message"
+                                )
+                            }
+                        ],
+
+                        "iocs": [
+                            alert["event"].get(
+                                "source_ip",
+                                "N/A"
+                            ),
+
+                            alert["event"].get(
+                                "destination_ip",
+                                "N/A"
+                            ),
+                        ],
+                    }
+
+                    incidents_store.append(
+                        incident
                     )
 
-            await asyncio.sleep(1)
+                    incidents_store[:] = \
+                        incidents_store[-50:]
+
+                    GraphBuilder.build(
+                        alert
+                    )
+
+                    print(
+                        f"[INCIDENT] {incident}"
+                    )
+
+            await asyncio.sleep(0.5)
+
+    @staticmethod
+    def map_mitre(alert):
+
+        title = alert.get(
+            "title",
+            ""
+        ).lower()
+
+        if "ransomware" in title:
+            return "T1486"
+
+        if "brute" in title:
+            return "T1110"
+
+        if "exfiltration" in title:
+            return "T1041"
+
+        return "T1021"

@@ -1,5 +1,7 @@
 "use client";
 
+import LogExplorer from "@/components/logs/log-explorer";
+
 import { Sidebar } from "@/components/layout/sidebar";
 
 import { SOCCommandCenter } from "@/components/soc/soc-command-center";
@@ -16,11 +18,10 @@ import { SigmaStudio } from "@/components/sigma/sigma-studio";
 
 import { UEBADashboard } from "@/components/ueba/ueba-dashboard";
 
-import { LogExplorer } from "@/components/logs/log-explorer";
-
 import { LiveAttackGraph } from "@/components/graph/live-attack-graph";
 
 import { useUIStore } from "@/store/ui-store";
+
 
 export default function DashboardPage() {
 
@@ -28,6 +29,7 @@ export default function DashboardPage() {
     useUIStore();
 
   return (
+
     <div className="
       flex
       bg-black
@@ -54,6 +56,8 @@ export default function DashboardPage() {
             <ThreatTrends />
 
             <LiveAttackGraph />
+
+            <LogExplorer />
 
           </div>
         )}
@@ -93,7 +97,13 @@ export default function DashboardPage() {
         {activeTab ===
           "ai-assistant" && (
 
-          <LogExplorer />
+          <div className="
+            text-white
+            text-2xl
+            font-bold
+          ">
+            AI Assistant
+          </div>
         )}
 
         {activeTab ===

@@ -237,6 +237,166 @@ function TabPane({ children }: { children: React.ReactNode }) {
 }
 
 /* ─────────────────────────────────────────────
+   Background Layer
+   Five stacked layers rendered as a fixed base:
+   1. Near-black base  2. Aurora orbs (animated)
+   3. Hex grid (SVG)   4. Grain (SVG noise)
+   5. Radar sweep beam 6. Vignette
+───────────────────────────────────────────── */
+function BackgroundLayer() {
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 overflow-hidden"
+      style={{ zIndex: 0, pointerEvents: "none" }}
+    >
+      {/* ① Base */}
+      <div className="absolute inset-0 bg-[#020508]" />
+
+      {/* ② Aurora orb — cyan, top-right */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 760, height: 760,
+          top: -280, right: -200,
+          background: "radial-gradient(circle, rgba(34,211,238,0.17) 0%, rgba(6,182,212,0.06) 45%, transparent 70%)",
+          filter: "blur(72px)",
+          animation: "bgDriftA 32s ease-in-out infinite",
+          willChange: "transform",
+        }}
+      />
+
+      {/* ② Aurora orb — sky-blue, bottom-left */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 680, height: 680,
+          bottom: -240, left: -200,
+          background: "radial-gradient(circle, rgba(56,189,248,0.13) 0%, rgba(14,165,233,0.05) 45%, transparent 70%)",
+          filter: "blur(90px)",
+          animation: "bgDriftB 26s ease-in-out infinite",
+          willChange: "transform",
+        }}
+      />
+
+      {/* ② Aurora orb — indigo, center (threat depth) */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 520, height: 520,
+          top: "35%", left: "48%",
+          transform: "translate(-50%, -50%)",
+          background: "radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 68%)",
+          filter: "blur(100px)",
+          animation: "bgBreathe 20s ease-in-out infinite",
+          willChange: "transform, opacity",
+        }}
+      />
+
+      {/* ② Aurora orb — rose, far bottom-right (subtle threat indicator) */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 420, height: 420,
+          bottom: -120, right: -80,
+          background: "radial-gradient(circle, rgba(244,63,94,0.06) 0%, transparent 65%)",
+          filter: "blur(80px)",
+          animation: "bgDriftC 38s ease-in-out infinite",
+          willChange: "transform",
+        }}
+      />
+
+      {/* ③ Hexagonal SVG grid */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ opacity: 1 }}
+      >
+        <defs>
+          {/*
+            Flat-top hex, circumradius R = 32
+            Width = 2R = 64, Height = √3·R ≈ 55.4
+            Tile: 3 hexes per row repetition = width 96, height 55.4
+            Centers: col 1 at x=32, col 2 at x=80 (offset up half-row)
+          */}
+          <pattern
+            id="soc-hex"
+            x="0" y="0"
+            width="96" height="55.4"
+            patternUnits="userSpaceOnUse"
+          >
+            {/* Col A hex */}
+            <polygon
+              points="64,27.7 48,55.4 16,55.4 0,27.7 16,0 48,0"
+              fill="none"
+              stroke="rgba(34,211,238,0.07)"
+              strokeWidth="0.8"
+            />
+            {/* Col B hex (right column, half-row offset — wraps top & bottom) */}
+            <polygon
+              points="112,0 128,27.7 112,55.4 80,55.4 64,27.7 80,0"
+              fill="none"
+              stroke="rgba(34,211,238,0.07)"
+              strokeWidth="0.8"
+            />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#soc-hex)" />
+      </svg>
+
+      {/* ④ SVG fractal noise grain */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ opacity: 0.55, mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"] }}
+      >
+        <defs>
+          <filter id="soc-grain">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.68"
+              numOctaves="4"
+              stitchTiles="stitch"
+            />
+          </filter>
+        </defs>
+        <rect width="100%" height="100%" filter="url(#soc-grain)" opacity="0.09" />
+      </svg>
+
+      {/* ⑤ Radar sweep beam */}
+      <div
+        className="absolute top-0 bottom-0"
+        style={{
+          width: 280,
+          background: "linear-gradient(90deg, transparent 0%, rgba(34,211,238,0.025) 50%, transparent 100%)",
+          animation: "bgRadarSweep 9s ease-in-out infinite",
+          animationDelay: "3s",
+          willChange: "transform",
+        }}
+      />
+
+      {/* ⑥ Top edge glow */}
+      <div
+        className="absolute top-0 left-0 right-0"
+        style={{
+          height: 1,
+          background: "linear-gradient(90deg, transparent 5%, rgba(34,211,238,0.35) 35%, rgba(34,211,238,0.5) 50%, rgba(34,211,238,0.35) 65%, transparent 95%)",
+          boxShadow: "0 0 40px 6px rgba(34,211,238,0.07)",
+        }}
+      />
+
+      {/* ⑥ Vignette — darkens edges so content pops */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse 90% 85% at 60% 48%, transparent 0%, rgba(2,5,8,0.72) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
    Main Page
 ───────────────────────────────────────────── */
 export default function DashboardPage() {
@@ -266,7 +426,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Global styles injected once */}
+      {/* Global styles */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap');
 
@@ -274,12 +434,12 @@ export default function DashboardPage() {
           --cyan: #22d3ee;
           --cyan-dim: rgba(34,211,238,0.15);
           --red-glow: rgba(239,68,68,0.3);
-          --panel-bg: rgba(9,9,11,0.85);
+          --panel-bg: rgba(4,8,14,0.82);
         }
 
         * { box-sizing: border-box; }
 
-        /* Scanline texture */
+        /* ── Scanlines (fixed, above everything except modals) ── */
         body::after {
           content: '';
           position: fixed;
@@ -287,64 +447,92 @@ export default function DashboardPage() {
           background: repeating-linear-gradient(
             0deg,
             transparent,
-            transparent 2px,
-            rgba(0,0,0,0.06) 2px,
-            rgba(0,0,0,0.06) 4px
+            transparent 3px,
+            rgba(0,0,0,0.035) 3px,
+            rgba(0,0,0,0.035) 4px
           );
           pointer-events: none;
           z-index: 9999;
         }
 
-        /* Scrollbar */
+        /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        ::-webkit-scrollbar-track { background: #020508; }
+        ::-webkit-scrollbar-thumb { background: #1e2a35; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2d3f4f; }
 
-        /* Tab enter animation */
+        /* ── Tab enter ── */
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .tab-enter { animation: fadeSlideUp 0.35s ease forwards; }
 
-        /* Shimmer on cards */
+        /* ── Shimmer skeleton ── */
         @keyframes shimmer {
           0%   { background-position: -200% center; }
           100% { background-position:  200% center; }
         }
         .shimmer-loading {
-          background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+          background: linear-gradient(90deg, #0d1117 25%, #161f2a 50%, #0d1117 75%);
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
         }
 
-        .font-display { font-family: 'Syne', sans-serif; }
+        /* ── Aurora orb animations ── */
+        @keyframes bgDriftA {
+          0%   { transform: translate(0px,   0px)   scale(1);    }
+          20%  { transform: translate(-55px, 90px)  scale(1.06); }
+          45%  { transform: translate(35px,  150px) scale(0.95); }
+          70%  { transform: translate(90px,  50px)  scale(1.05); }
+          100% { transform: translate(0px,   0px)   scale(1);    }
+        }
+
+        @keyframes bgDriftB {
+          0%   { transform: translate(0px,  0px)   scale(1);    }
+          35%  { transform: translate(75px, -95px) scale(1.1);  }
+          65%  { transform: translate(-40px, 60px) scale(0.93); }
+          100% { transform: translate(0px,  0px)   scale(1);    }
+        }
+
+        @keyframes bgBreathe {
+          0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1);    }
+          50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.35); }
+        }
+
+        @keyframes bgDriftC {
+          0%   { transform: translate(0px, 0px)    scale(1);    }
+          50%  { transform: translate(-60px, -80px) scale(1.12); }
+          100% { transform: translate(0px,  0px)   scale(1);    }
+        }
+
+        /* ── Radar sweep ── */
+        @keyframes bgRadarSweep {
+          0%   { transform: translateX(-320px); opacity: 0;   }
+          8%   { opacity: 1; }
+          92%  { opacity: 1; }
+          100% { transform: translateX(100vw);  opacity: 0;   }
+        }
+
+        .font-display     { font-family: 'Syne', sans-serif; }
         .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
       `}</style>
 
-      <div className="flex bg-black min-h-screen font-mono-custom">
-        {/* ── Sidebar ── */}
-        <Sidebar />
+      <div className="flex min-h-screen font-mono-custom" style={{ background: "transparent" }}>
+        {/* ── Fixed atmospheric background ── */}
+        <BackgroundLayer />
+
+        {/* ── Sidebar (sits above background) ── */}
+        <div className="relative" style={{ zIndex: 10 }}>
+          <Sidebar />
+        </div>
 
         {/* ── Main content ── */}
         <main
           className="flex-1 overflow-y-auto relative"
-          style={{
-            background: "radial-gradient(ellipse 80% 60% at 50% -20%, rgba(34,211,238,0.04) 0%, transparent 70%), #09090b",
-          }}
+          style={{ zIndex: 5, background: "transparent" }}
         >
-          {/* Subtle grid overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.025]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(34,211,238,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,1) 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
-            }}
-          />
-
-          <div className="relative z-10 p-6 md:p-8">
+          <div className="relative p-6 md:p-8">
 
             {/* ══════════════════════ DASHBOARD ══════════════════════ */}
             {activeTab === "dashboard" && (

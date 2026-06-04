@@ -32,7 +32,7 @@ export function AIPanel() {
   return (
 
     <div className="
-      bg-black
+      bg-slate-950
       border
       border-zinc-800
       rounded-xl
@@ -69,7 +69,7 @@ export function AIPanel() {
           className="
             bg-zinc-950
             border
-            border-red-500/30
+            border-slate-700/30
             rounded-xl
             p-6
           "
@@ -145,7 +145,7 @@ export function AIPanel() {
           className="
             bg-zinc-950
             border
-            border-red-500/30
+            border-slate-700/30
             rounded-xl
             p-6
           "
@@ -161,7 +161,7 @@ export function AIPanel() {
           </h3>
 
           <div className="
-            bg-black
+            bg-slate-950
             rounded-xl
             p-5
             text-zinc-200

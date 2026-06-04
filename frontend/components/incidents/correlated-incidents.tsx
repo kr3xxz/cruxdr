@@ -50,7 +50,7 @@ export function CorrelatedIncidents() {
           key={idx}
           className="
             border
-            border-red-500
+            border-slate-700
             bg-red-950
             rounded-lg
             p-4

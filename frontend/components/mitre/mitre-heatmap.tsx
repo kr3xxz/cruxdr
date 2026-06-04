@@ -62,7 +62,7 @@ export function MitreHeatmap() {
 
   return (
     <div className="
-      bg-black
+      bg-slate-950
       border
       border-zinc-800
       rounded-xl
@@ -126,7 +126,7 @@ export function MitreHeatmap() {
 
                 ${
                   technique.count > 0
-                    ? "bg-red-950 border-red-500"
+                    ? "bg-red-950 border-slate-700"
                     : "bg-zinc-950 border-zinc-800"
                 }
               `}

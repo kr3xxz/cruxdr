@@ -51,7 +51,7 @@ export function LiveAttackGraph() {
 
     <div className="
       border
-      border-cyan-500
+      border-cyan-500 shadow-lg shadow-cyan-500/20
       rounded-xl
       bg-[#050816]
       p-6
@@ -59,7 +59,7 @@ export function LiveAttackGraph() {
 
       <h2 className="
         text-cyan-400
-        text-3xl
+        text-4xl
         font-bold
         mb-6
       ">
@@ -97,9 +97,9 @@ export function LiveAttackGraph() {
 
                     <div className="
                       min-w-[180px]
-                      bg-black
+                      bg-slate-950
                       border
-                      border-red-500
+                      border-slate-700
                       rounded-xl
                       p-5
                     ">

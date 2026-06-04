@@ -110,7 +110,7 @@ export function SOARCenter() {
                   border-zinc-800
                   rounded-xl
                   p-5
-                  bg-black
+                  bg-slate-950
                 "
               >
 

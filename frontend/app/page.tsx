@@ -1,292 +1,498 @@
 "use client";
 
 import SigmaUpload from "@/components/sigma/sigma-upload";
-import { useState } from "react";
-
+import { useState, useEffect, useRef } from "react";
 import LogExplorer from "@/components/logs/log-explorer";
-
 import { Sidebar } from "@/components/layout/sidebar";
 import { AIPanel } from "@/components/incidents/ai-panel";
-
 import { SOCCommandCenter } from "@/components/soc/soc-command-center";
-
 import { ThreatTrends } from "@/components/analytics/threat-trends";
-
 import { MitreHeatmap } from "@/components/mitre/mitre-heatmap";
-
 import { CorrelatedIncidents } from "@/components/incidents/correlated-incidents";
-
 import ThreatHunting from "@/components/hunting/threat-hunting";
-
 import { SigmaStudio } from "@/components/sigma/sigma-studio";
-
 import { UEBADashboard } from "@/components/ueba/ueba-dashboard";
-
 import { LiveAttackGraph } from "@/components/graph/live-attack-graph";
-
 import { useUIStore } from "@/store/ui-store";
 
+/* ─────────────────────────────────────────────
+   Severity config
+───────────────────────────────────────────── */
+const severityConfig: Record<string, { color: string; glow: string; bg: string; dot: string }> = {
+  critical: {
+    color: "text-red-400",
+    glow: "shadow-[0_0_12px_rgba(239,68,68,0.4)]",
+    bg: "bg-red-950/60",
+    dot: "bg-red-500",
+  },
+  high: {
+    color: "text-orange-400",
+    glow: "shadow-[0_0_12px_rgba(251,146,60,0.3)]",
+    bg: "bg-orange-950/50",
+    dot: "bg-orange-500",
+  },
+  medium: {
+    color: "text-amber-400",
+    glow: "shadow-[0_0_12px_rgba(251,191,36,0.25)]",
+    bg: "bg-amber-950/40",
+    dot: "bg-amber-400",
+  },
+  low: {
+    color: "text-cyan-400",
+    glow: "shadow-[0_0_8px_rgba(34,211,238,0.2)]",
+    bg: "bg-cyan-950/30",
+    dot: "bg-cyan-500",
+  },
+};
 
-export default function DashboardPage() {
+/* ─────────────────────────────────────────────
+   Alert Card
+───────────────────────────────────────────── */
+function AlertCard({ alert, idx }: { alert: any; idx: number }) {
+  const sev = (alert.severity || "low").toLowerCase();
+  const cfg = severityConfig[sev] ?? severityConfig.low;
+  const [visible, setVisible] = useState(false);
 
-  const { activeTab } =
-    useUIStore();
-console.log("ACTIVE TAB =", activeTab);
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), idx * 80);
+    return () => clearTimeout(t);
+  }, [idx]);
 
-  const [alerts, setAlerts] =
-    useState<any[]>([]);
+  return (
+    <div
+      className={`
+        relative overflow-hidden rounded-xl border border-zinc-700/50
+        ${cfg.bg} ${cfg.glow}
+        p-4 mb-3 backdrop-blur-sm
+        transition-all duration-500
+        ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
+        hover:border-zinc-500/60 hover:scale-[1.01]
+        group
+      `}
+    >
+      {/* Accent left bar */}
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${cfg.dot}`} />
 
-  const [events, setEvents] =
-    useState<any[]>([]);
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-3 pl-2">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex h-2 w-2 rounded-full ${cfg.dot} animate-pulse`} />
+          <span className={`text-xs font-mono font-semibold uppercase tracking-widest ${cfg.color}`}>
+            {sev}
+          </span>
+        </div>
+        <span className="text-[10px] text-zinc-500 font-mono">
+          {alert.mitre_attack && (
+            <span className="px-2 py-0.5 rounded bg-zinc-800/80 border border-zinc-700 text-cyan-400/70">
+              {alert.mitre_attack}
+            </span>
+          )}
+        </span>
+      </div>
 
-  const uploadFile = async (
-    e: any
-  ) => {
+      {/* Content */}
+      <div className="pl-2 grid grid-cols-2 gap-x-6 gap-y-1">
+        {[
+          ["Type", alert.alert_type],
+          ["Source IP", alert.source_ip],
+        ].map(([label, value]) => (
+          <div key={label}>
+            <span className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">{label}</span>
+            <p className="text-white text-sm font-medium mt-0.5 truncate">{value}</p>
+          </div>
+        ))}
+      </div>
 
-    const file =
-      e.target.files[0];
+      {/* Hover shimmer */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-300 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent" />
+    </div>
+  );
+}
 
-    if (!file) return;
+/* ─────────────────────────────────────────────
+   Event Row
+───────────────────────────────────────────── */
+function EventRow({ event, idx }: { event: any; idx: number }) {
+  return (
+    <div
+      className="
+        font-mono text-xs text-zinc-400 py-2 px-3 rounded-lg
+        border border-transparent hover:border-zinc-700/60
+        hover:bg-zinc-800/40 hover:text-cyan-300
+        transition-all duration-200 cursor-default
+      "
+      style={{ animationDelay: `${idx * 40}ms` }}
+    >
+      <span className="text-zinc-600 mr-2 select-none">{String(idx + 1).padStart(3, "0")}</span>
+      {event.raw}
+    </div>
+  );
+}
 
-    const formData =
-      new FormData();
+/* ─────────────────────────────────────────────
+   Upload Zone
+───────────────────────────────────────────── */
+function UploadZone({ onFile }: { onFile: (file: File) => void }) {
+  const [dragging, setDragging] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    formData.append(
-      "file",
-      file
-    );
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) { setFileName(file.name); onFile(file); }
+  };
 
-    const response =
-      await fetch(
-        "http://localhost:8080/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-    const data =
-      await response.json();
-
-    setAlerts(
-      data.alerts || []
-    );
-
-    setEvents(
-      data.events || []
-    );
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setFileName(file.name); onFile(file); }
   };
 
   return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+      className={`
+        relative cursor-pointer rounded-xl border-2 border-dashed
+        transition-all duration-300 p-8 text-center select-none
+        ${dragging
+          ? "border-cyan-400 bg-cyan-950/20 shadow-[0_0_30px_rgba(34,211,238,0.2)]"
+          : "border-zinc-700 bg-zinc-900/50 hover:border-zinc-500 hover:bg-zinc-800/50"
+        }
+      `}
+    >
+      <input ref={inputRef} type="file" onChange={handleChange} className="hidden" />
 
-    <div className="
-      flex
-      bg-black
-      min-h-screen
-    ">
+      {/* Icon */}
+      <div className={`
+        mx-auto mb-3 w-12 h-12 rounded-lg flex items-center justify-center
+        transition-colors duration-300
+        ${dragging ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-800 text-zinc-400"}
+      `}>
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+        </svg>
+      </div>
 
-      <Sidebar />
+      {fileName ? (
+        <>
+          <p className="text-cyan-400 font-mono text-sm font-semibold">{fileName}</p>
+          <p className="text-zinc-500 text-xs mt-1">File loaded — drop another to replace</p>
+        </>
+      ) : (
+        <>
+          <p className="text-zinc-300 font-medium text-sm">Drop telemetry file here</p>
+          <p className="text-zinc-500 text-xs mt-1">or click to browse · EVTX, JSON, CSV, PCAP</p>
+        </>
+      )}
 
-      <main className="
-        flex-1
-        p-6
-        overflow-y-auto
-      ">
-
-        {activeTab ===
-          "dashboard" && (
-
-          <div className="
-            space-y-6
-          ">
-
-            <SOCCommandCenter />
-
-            <ThreatTrends />
-
-            <LiveAttackGraph />
-
-            <div className="
-              bg-zinc-900
-              border
-              border-zinc-700
-              rounded-xl
-              p-6
-            ">
-
-              <h2 className="
-                text-white
-                text-2xl
-                font-bold
-                mb-4
-              ">
-                Telemetry Analysis
-              </h2>
-
-              <input
-                type="file"
-                onChange={uploadFile}
-                className="
-                  text-white
-                  mb-6
-                "
-              />
-
-              <div className="mb-6">
-
-                <h3 className="
-                  text-red-400
-                  text-xl
-                  font-semibold
-                  mb-2
-                ">
-                  Alerts
-                </h3>
-
-                {alerts.map(
-                  (alert, idx) => (
-
-                  <div
-                    key={idx}
-                    className="
-                      border
-                      border-red-500
-                      bg-red-950
-                      text-white
-                      p-4
-                      rounded-lg
-                      mb-4
-                    "
-                  >
-
-                    <p>
-                      <strong>
-                        Type:
-                      </strong>{" "}
-                      {alert.alert_type}
-                    </p>
-
-                    <p>
-                      <strong>
-                        Severity:
-                      </strong>{" "}
-                      {alert.severity}
-                    </p>
-
-                    <p>
-                      <strong>
-                        Source IP:
-                      </strong>{" "}
-                      {alert.source_ip}
-                    </p>
-
-                    <p>
-                      <strong>
-                        MITRE:
-                      </strong>{" "}
-                      {alert.mitre_attack}
-                    </p>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-              <div>
-
-                <h3 className="
-                  text-cyan-400
-                  text-xl
-                  font-semibold
-                  mb-2
-                ">
-                  Parsed Events
-                </h3>
-
-                {events.map(
-                  (event, idx) => (
-
-                  <div
-                    key={idx}
-                    className="
-                      border
-                      border-zinc-700
-                      bg-zinc-950
-                      text-white
-                      p-3
-                      rounded-lg
-                      mb-2
-                    "
-                  >
-                    <p>
-                      {event.raw}
-                    </p>
-                  </div>
-
-                ))}
-
-              </div>
-
-            </div>
-
-            <LogExplorer />
-
-          </div>
-        )}
-
-        {activeTab ===
-          "alerts" && (
-
-          <div className="
-            space-y-6
-          ">
-
-            <SigmaStudio />
-
-            <UEBADashboard />
-
-          </div>
-        )}
-
-        {activeTab ===
-          "incidents" && (
-
-          <CorrelatedIncidents />
-        )}
-
-        {activeTab ===
-          "threat-hunting" && (
-
-          <ThreatHunting />
-        )}
-
-        {activeTab ===
-          "mitre" && (
-
-          <MitreHeatmap />
-        )}
-
-        {activeTab ===
-          "ai-assistant" && (
-
-          <AIPanel />
-        )}
-
-        {activeTab ===
-          "settings" && (
-
-          <div className="
-            text-white
-            text-2xl
-            font-bold
-          ">
-            <SigmaUpload />
-          </div>
-        )}
-
-      </main>
-
+      {/* Animated corner accents when dragging */}
+      {dragging && (
+        <>
+          <span className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-cyan-400 rounded-tl" />
+          <span className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-cyan-400 rounded-tr" />
+          <span className="absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 border-cyan-400 rounded-bl" />
+          <span className="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-cyan-400 rounded-br" />
+        </>
+      )}
     </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Section Heading
+───────────────────────────────────────────── */
+function SectionHeading({ label, count, color = "cyan" }: { label: string; count?: number; color?: "cyan" | "red" }) {
+  return (
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`h-px flex-1 ${color === "red" ? "bg-gradient-to-r from-red-500/50 to-transparent" : "bg-gradient-to-r from-cyan-500/50 to-transparent"}`} />
+      <span className={`text-xs font-mono font-bold uppercase tracking-[0.2em] ${color === "red" ? "text-red-400" : "text-cyan-400"}`}>
+        {label}
+      </span>
+      {count !== undefined && (
+        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${color === "red" ? "bg-red-950 text-red-400 border border-red-800" : "bg-cyan-950 text-cyan-400 border border-cyan-800"}`}>
+          {count}
+        </span>
+      )}
+      <div className={`h-px flex-1 ${color === "red" ? "bg-gradient-to-l from-red-500/50 to-transparent" : "bg-gradient-to-l from-cyan-500/50 to-transparent"}`} />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Tab Wrapper — fade + slide animation
+───────────────────────────────────────────── */
+function TabPane({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { requestAnimationFrame(() => setMounted(true)); }, []);
+  return (
+    <div className={`transition-all duration-400 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}>
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Main Page
+───────────────────────────────────────────── */
+export default function DashboardPage() {
+  const { activeTab } = useUIStore();
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const response = await fetch("http://localhost:8080/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      setAlerts(data.alerts || []);
+      setEvents(data.events || []);
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Global styles injected once */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+        :root {
+          --cyan: #22d3ee;
+          --cyan-dim: rgba(34,211,238,0.15);
+          --red-glow: rgba(239,68,68,0.3);
+          --panel-bg: rgba(9,9,11,0.85);
+        }
+
+        * { box-sizing: border-box; }
+
+        /* Scanline texture */
+        body::after {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.06) 2px,
+            rgba(0,0,0,0.06) 4px
+          );
+          pointer-events: none;
+          z-index: 9999;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Tab enter animation */
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .tab-enter { animation: fadeSlideUp 0.35s ease forwards; }
+
+        /* Shimmer on cards */
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        .shimmer-loading {
+          background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.4s infinite;
+        }
+
+        .font-display { font-family: 'Syne', sans-serif; }
+        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+      `}</style>
+
+      <div className="flex bg-black min-h-screen font-mono-custom">
+        {/* ── Sidebar ── */}
+        <Sidebar />
+
+        {/* ── Main content ── */}
+        <main
+          className="flex-1 overflow-y-auto relative"
+          style={{
+            background: "radial-gradient(ellipse 80% 60% at 50% -20%, rgba(34,211,238,0.04) 0%, transparent 70%), #09090b",
+          }}
+        >
+          {/* Subtle grid overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.025]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(34,211,238,1) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,1) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
+
+          <div className="relative z-10 p-6 md:p-8">
+
+            {/* ══════════════════════ DASHBOARD ══════════════════════ */}
+            {activeTab === "dashboard" && (
+              <div key="dashboard" className="tab-enter space-y-6">
+                <SOCCommandCenter />
+                <ThreatTrends />
+                <LiveAttackGraph />
+
+                {/* ── Telemetry Analysis Card ── */}
+                <div
+                  className="rounded-2xl border border-zinc-800/80 backdrop-blur-sm overflow-hidden"
+                  style={{ background: "var(--panel-bg)" }}
+                >
+                  {/* Card header */}
+                  <div className="px-6 py-4 border-b border-zinc-800/80 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {/* Animated status dot */}
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500" />
+                      </span>
+                      <h2 className="font-display text-white text-lg font-bold tracking-tight">
+                        Telemetry Analysis
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {alerts.length > 0 && (
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-red-950/80 text-red-400 border border-red-900/60">
+                          {alerts.length} alert{alerts.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {events.length > 0 && (
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-cyan-950/80 text-cyan-400 border border-cyan-900/60">
+                          {events.length} event{events.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-6 space-y-8">
+                    {/* Upload zone */}
+                    {uploading ? (
+                      <div className="rounded-xl border border-zinc-700 p-8 text-center shimmer-loading">
+                        <p className="text-zinc-500 text-sm font-mono">Processing telemetry…</p>
+                      </div>
+                    ) : (
+                      <UploadZone onFile={uploadFile} />
+                    )}
+
+                    {/* Alerts section */}
+                    {alerts.length > 0 && (
+                      <div>
+                        <SectionHeading label="Alerts" count={alerts.length} color="red" />
+                        <div>
+                          {alerts.map((alert, idx) => (
+                            <AlertCard key={idx} alert={alert} idx={idx} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Events section */}
+                    {events.length > 0 && (
+                      <div>
+                        <SectionHeading label="Parsed Events" count={events.length} color="cyan" />
+                        <div
+                          className="rounded-xl border border-zinc-800 bg-black/40 p-3 max-h-64 overflow-y-auto"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                        >
+                          {events.map((event, idx) => (
+                            <EventRow key={idx} event={event} idx={idx} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {alerts.length === 0 && events.length === 0 && !uploading && (
+                      <div className="text-center py-6">
+                        <p className="text-zinc-600 text-xs font-mono">
+                          No data ingested yet — upload a telemetry file above
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <LogExplorer />
+              </div>
+            )}
+
+            {/* ══════════════════════ ALERTS ══════════════════════ */}
+            {activeTab === "alerts" && (
+              <div key="alerts" className="tab-enter space-y-6">
+                <SigmaStudio />
+                <UEBADashboard />
+              </div>
+            )}
+
+            {/* ══════════════════════ INCIDENTS ══════════════════════ */}
+            {activeTab === "incidents" && (
+              <div key="incidents" className="tab-enter">
+                <CorrelatedIncidents />
+              </div>
+            )}
+
+            {/* ══════════════════════ THREAT HUNTING ══════════════════════ */}
+            {activeTab === "threat-hunting" && (
+              <div key="threat-hunting" className="tab-enter">
+                <ThreatHunting />
+              </div>
+            )}
+
+            {/* ══════════════════════ MITRE ══════════════════════ */}
+            {activeTab === "mitre" && (
+              <div key="mitre" className="tab-enter">
+                <MitreHeatmap />
+              </div>
+            )}
+
+            {/* ══════════════════════ AI ASSISTANT ══════════════════════ */}
+            {activeTab === "ai-assistant" && (
+              <div key="ai-assistant" className="tab-enter">
+                <AIPanel />
+              </div>
+            )}
+
+            {/* ══════════════════════ SETTINGS ══════════════════════ */}
+            {activeTab === "settings" && (
+              <div key="settings" className="tab-enter">
+                <div className="rounded-2xl border border-zinc-800/80 backdrop-blur-sm overflow-hidden"
+                  style={{ background: "var(--panel-bg)" }}>
+                  <div className="px-6 py-4 border-b border-zinc-800/80">
+                    <h2 className="font-display text-white text-lg font-bold tracking-tight">
+                      Rule Management
+                    </h2>
+                    <p className="text-zinc-500 text-xs mt-0.5">Upload and manage Sigma detection rules</p>
+                  </div>
+                  <div className="p-6">
+                    <SigmaUpload />
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </main>
+      </div>
+    </>
   );
 }

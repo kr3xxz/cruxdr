@@ -133,7 +133,7 @@ export function SigmaStudio() {
               }}
 
               className="
-                bg-black
+                bg-slate-950
                 border
                 border-zinc-800
                 rounded-xl
@@ -197,9 +197,9 @@ export function SigmaStudio() {
                 key={index}
 
                 className="
-                  bg-black
+                  bg-slate-950
                   border
-                  border-red-500/20
+                  border-slate-700/20
                   rounded-lg
                   p-4
                 "

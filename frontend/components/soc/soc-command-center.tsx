@@ -220,7 +220,7 @@ export function SOCCommandCenter() {
   return (
 
     <div className="
-      bg-black
+      bg-slate-950
       border
       border-zinc-800
       rounded-xl
@@ -329,8 +329,8 @@ export function SOCCommandCenter() {
               className="
                 bg-zinc-900
                 border
-                border-red-500/30
-                hover:border-red-500
+                border-slate-700/30
+                hover:border-slate-700
                 rounded-xl
                 p-5
                 text-white
@@ -351,8 +351,8 @@ export function SOCCommandCenter() {
               className="
                 bg-zinc-900
                 border
-                border-red-500/30
-                hover:border-red-500
+                border-slate-700/30
+                hover:border-slate-700
                 rounded-xl
                 p-5
                 text-white
@@ -373,8 +373,8 @@ export function SOCCommandCenter() {
               className="
                 bg-zinc-900
                 border
-                border-red-500/30
-                hover:border-red-500
+                border-slate-700/30
+                hover:border-slate-700
                 rounded-xl
                 p-5
                 text-white
@@ -434,7 +434,7 @@ export function SOCCommandCenter() {
                 }}
 
                 className="
-                  text-green-400
+                  text-cyan-400
                   font-mono
                   text-sm
                 "

@@ -23,7 +23,7 @@ export function Sidebar() {
     <aside className="
       w-64
       min-h-screen
-      bg-black
+      bg-slate-950
       border-r
       border-zinc-800
       p-6

@@ -31,7 +31,7 @@ export default function ThreatHunting() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="username:root"
-          className="flex-1 bg-black border border-zinc-700 rounded p-3 text-white"
+          className="flex-1 bg-slate-950 border border-zinc-700 rounded p-3 text-white"
         />
 
         <button

@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
     <div className="
       flex
-      bg-black
+      bg-slate-950
       min-h-screen
     ">
 

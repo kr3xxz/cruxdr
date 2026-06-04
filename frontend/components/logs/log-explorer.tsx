@@ -100,7 +100,7 @@ export default function LogExplorer() {
         }
         className="
           w-full
-          bg-black
+          bg-slate-950
           border
           border-zinc-700
           rounded-lg
@@ -123,7 +123,7 @@ export default function LogExplorer() {
             className="
               border
               border-zinc-700
-              bg-black
+              bg-slate-950
               rounded-lg
               p-4
             "

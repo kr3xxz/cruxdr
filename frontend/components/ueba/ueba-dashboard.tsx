@@ -50,7 +50,7 @@ export function UEBADashboard() {
 
   return (
     <div className="
-      bg-black
+      bg-slate-950
       border
       border-zinc-800
       rounded-xl
@@ -109,7 +109,7 @@ export function UEBADashboard() {
                   className="
                     bg-zinc-950
                     border
-                    border-red-500/20
+                    border-slate-700/20
                     rounded-xl
                     p-4
                   "
@@ -182,7 +182,7 @@ export function UEBADashboard() {
                   className="
                     bg-zinc-950
                     border
-                    border-red-500/20
+                    border-slate-700/20
                     rounded-xl
                     p-4
                   "

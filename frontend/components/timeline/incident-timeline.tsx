@@ -32,7 +32,7 @@ export function IncidentTimeline() {
             key={index}
             className="flex gap-4 items-start"
           >
-            <div className="w-3 h-3 rounded-full bg-red-500 mt-2" />
+            <div className="w-3 h-3 rounded-full bg-slate-800 mt-2" />
 
             <div>
               <p className="text-zinc-400 text-sm">

@@ -1,54 +1,107 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
-import { useEventStore } from "@/store/event-store";
-
 const mitreTechniques = [
-
   {
     id: "T1486",
     name: "Data Encrypted for Impact",
     tactic: "Impact",
   },
-
   {
     id: "T1110",
     name: "Brute Force",
     tactic: "Credential Access",
   },
-
   {
     id: "T1021",
     name: "Remote Services",
     tactic: "Lateral Movement",
   },
+  {
+    id: "T1566",
+    name: "Phishing",
+    tactic: "Initial Access",
+  },
+  {
+    id: "T1041",
+    name: "Exfiltration Over C2 Channel",
+    tactic: "Exfiltration",
+  },
+  {
+    id: "T1003",
+    name: "Credential Dumping",
+    tactic: "Credential Access",
+  },
 ];
+
+const ALERT_TO_MITRE: Record<string, string> = {
+  "Ransomware Activity Detection": "T1486",
+  "Failed Login Detection": "T1110",
+  "SSH Brute Force": "T1110",
+  "Lateral Movement Detection": "T1021",
+  "Phishing Activity Detection": "T1566",
+  "Data Exfiltration Detection": "T1041",
+  "Mimikatz Credential Dumping Detection": "T1003",
+};
 
 export function MitreHeatmap() {
 
-  const events =
-    useEventStore(
-      (state) => state.events
-    );
+  const [alerts, setAlerts] =
+    useState<any[]>([]);
+
+  useEffect(() => {
+
+    const loadAlerts =
+      async () => {
+
+        try {
+
+          const res =
+            await fetch(
+              "http://localhost:8050/alerts"
+            );
+
+          const data =
+            await res.json();
+
+          setAlerts(data);
+
+        } catch (err) {
+
+          console.error(err);
+        }
+      };
+
+    loadAlerts();
+
+    const interval =
+      setInterval(
+        loadAlerts,
+        3000
+      );
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
 
   const activeTechniques =
     mitreTechniques.map(
       (technique) => {
 
-        const matched =
-          (events ?? []).filter(
-            (event: any) =>
-              event.mitre ===
-              technique.id
-          );
+        const count =
+          alerts.filter(
+            (alert) =>
+              ALERT_TO_MITRE[
+                alert.title
+              ] === technique.id
+          ).length;
 
         return {
-
           ...technique,
-
-          count:
-            matched.length,
+          count,
         };
       }
     );
@@ -61,6 +114,7 @@ export function MitreHeatmap() {
     );
 
   return (
+
     <div className="
       bg-slate-950
       border
@@ -126,7 +180,7 @@ export function MitreHeatmap() {
 
                 ${
                   technique.count > 0
-                    ? "bg-red-950 border-slate-700"
+                    ? "bg-red-950 border-red-800"
                     : "bg-zinc-950 border-zinc-800"
                 }
               `}
@@ -172,6 +226,7 @@ export function MitreHeatmap() {
               </p>
 
             </motion.div>
+
           )
         )}
 

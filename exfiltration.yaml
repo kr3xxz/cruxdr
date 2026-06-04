@@ -1,0 +1,16 @@
+title: Data Exfiltration Detection
+
+id: sigma-exfiltration-001
+
+severity: critical
+
+description: Detect suspicious data transfer
+
+detection:
+  keywords:
+    - outbound transfer
+    - large outbound transfer
+    - bytes_sent
+
+tags:
+  - attack.t1041

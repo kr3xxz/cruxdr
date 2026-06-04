@@ -1,0 +1,16 @@
+title: Brute Force Detection
+
+id: sigma-bruteforce-001
+
+severity: high
+
+description: Detect repeated failed logins
+
+detection:
+  keywords:
+    - failed login
+    - failed password
+    - login attempt
+
+tags:
+  - attack.t1110

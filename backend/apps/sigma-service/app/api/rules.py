@@ -21,10 +21,10 @@ async def get_rules():
 @router.get("/logs")
 async def get_logs():
 
-    return logs_store[-200:]
+    return logs_store[::-1]
 
 
 @router.get("/alerts")
 async def get_alerts():
 
-    return alerts_store[-100:]
+    return alerts_store[::-1]

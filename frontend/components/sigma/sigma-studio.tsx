@@ -2,34 +2,41 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useAlertStore } from "@/store/alert-store";
 
 export function SigmaStudio() {
 
   const [rules, setRules] =
     useState<any[]>([]);
 
-  const alerts =
-    useAlertStore(
-      (state) => state.alerts
-    );
+  const [alerts, setAlerts] =
+    useState<any[]>([]);
 
   useEffect(() => {
 
-    const loadRules =
+    const loadData =
       async () => {
 
         try {
 
-          const res =
+          const rulesRes =
             await fetch(
               "http://localhost:8050/rules"
             );
 
-          const data =
-            await res.json();
+          const rulesData =
+            await rulesRes.json();
 
-          setRules(data);
+          setRules(rulesData);
+
+          const alertsRes =
+            await fetch(
+              "http://localhost:8050/alerts"
+            );
+
+          const alertsData =
+            await alertsRes.json();
+
+          setAlerts(alertsData);
 
         } catch (e) {
 
@@ -37,32 +44,35 @@ export function SigmaStudio() {
         }
       };
 
-    loadRules();
-    const interval = setInterval(loadRules, 3000);
+    loadData();
 
-    return () => clearInterval(interval);
+    const interval =
+      setInterval(
+        loadData,
+        3000
+      );
+
+    return () =>
+      clearInterval(interval);
 
   }, []);
 
   return (
-    <div
-      className="
-        bg-zinc-900
-        border
-        border-zinc-800
-        rounded-xl
-        p-6
-      "
-    >
 
-      <h2
-        className="
-          text-white
-          text-2xl
-          font-bold
-          mb-6
-        "
-      >
+    <div className="
+      bg-zinc-900
+      border
+      border-zinc-800
+      rounded-xl
+      p-6
+    ">
+
+      <h2 className="
+        text-white
+        text-2xl
+        font-bold
+        mb-6
+      ">
         Sigma Studio
       </h2>
 
@@ -93,45 +103,37 @@ export function SigmaStudio() {
               "
             >
 
-              <div
-                className="
-                  flex
-                  justify-between
-                  items-center
-                "
-              >
+              <div className="
+                flex
+                justify-between
+                items-center
+              ">
 
                 <div>
 
-                  <h3
-                    className="
-                      text-white
-                      font-bold
-                      text-lg
-                    "
-                  >
+                  <h3 className="
+                    text-white
+                    font-bold
+                    text-lg
+                  ">
                     {rule.title}
                   </h3>
 
-                  <p
-                    className="
-                      text-zinc-400
-                      text-sm
-                      mt-1
-                    "
-                  >
+                  <p className="
+                    text-zinc-400
+                    text-sm
+                    mt-1
+                  ">
                     {rule.description}
                   </p>
 
                 </div>
 
-                <span
-                  className="
-                    text-red-400
-                    font-semibold
-                    uppercase
-                  "
-                >
+                <span className="
+                  text-red-400
+                  font-semibold
+                  uppercase
+                ">
                   {rule.severity}
                 </span>
 
@@ -145,14 +147,12 @@ export function SigmaStudio() {
 
       <div className="mt-8">
 
-        <h3
-          className="
-            text-red-400
-            text-xl
-            font-semibold
-            mb-4
-          "
-        >
+        <h3 className="
+          text-red-400
+          text-xl
+          font-semibold
+          mb-4
+        ">
           Triggered Alerts ({alerts.length})
         </h3>
 
@@ -175,29 +175,35 @@ export function SigmaStudio() {
                 "
               >
 
-                <div
-                  className="
-                    flex
-                    justify-between
-                    items-center
-                  "
-                >
+                <div className="
+                  flex
+                  justify-between
+                  items-center
+                ">
 
-                  <p
-                    className="
+                  <div>
+
+                    <p className="
                       text-white
-                    "
-                  >
-                    {alert.title}
-                  </p>
-
-                  <span
-                    className="
-                      text-red-400
                       font-bold
-                      uppercase
-                    "
-                  >
+                    ">
+                      {alert.title}
+                    </p>
+
+                    <p className="
+                      text-zinc-400
+                      text-xs
+                    ">
+                      {alert.event?.message}
+                    </p>
+
+                  </div>
+
+                  <span className="
+                    text-red-400
+                    font-bold
+                    uppercase
+                  ">
                     {alert.severity}
                   </span>
 

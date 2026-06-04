@@ -1,12 +1,8 @@
 from fastapi import APIRouter
-
 from app.core.log_generator import LogGenerator
-
 from kafka import KafkaProducer
-
 import json
 import traceback
-
 
 router = APIRouter()
 
@@ -15,7 +11,8 @@ def get_producer():
 
     return KafkaProducer(
         bootstrap_servers="crux-kafka:9092",
-        value_serializer=lambda v: json.dumps(v).encode("utf-8")
+        value_serializer=lambda v:
+            json.dumps(v).encode("utf-8")
     )
 
 
@@ -26,7 +23,7 @@ async def send_logs(logs):
     for log in logs:
 
         producer.send(
-            "logs",
+            "cruxdr-logs",
             log
         )
 
@@ -43,9 +40,9 @@ async def ransomware():
 
     try:
 
-        logs = LogGenerator.ransomware()
-
-        return await send_logs(logs)
+        return await send_logs(
+            LogGenerator.ransomware()
+        )
 
     except Exception as e:
 
@@ -61,9 +58,9 @@ async def brute_force():
 
     try:
 
-        logs = LogGenerator.brute_force()
-
-        return await send_logs(logs)
+        return await send_logs(
+            LogGenerator.brute_force()
+        )
 
     except Exception as e:
 
@@ -79,9 +76,9 @@ async def phishing():
 
     try:
 
-        logs = LogGenerator.ransomware()
-
-        return await send_logs(logs)
+        return await send_logs(
+            LogGenerator.phishing()
+        )
 
     except Exception as e:
 
@@ -97,9 +94,9 @@ async def lateral_movement():
 
     try:
 
-        logs = LogGenerator.brute_force()
-
-        return await send_logs(logs)
+        return await send_logs(
+            LogGenerator.lateral_movement()
+        )
 
     except Exception as e:
 
@@ -115,9 +112,9 @@ async def exfiltration():
 
     try:
 
-        logs = LogGenerator.exfiltration()
-
-        return await send_logs(logs)
+        return await send_logs(
+            LogGenerator.exfiltration()
+        )
 
     except Exception as e:
 

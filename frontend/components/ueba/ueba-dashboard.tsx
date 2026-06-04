@@ -1,54 +1,60 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-
-import { useEventStore } from "@/store/event-store";
 
 export function UEBADashboard() {
 
-  const events =
-    useEventStore(
-      (state) => state.events
-    );
+  const [risks, setRisks] =
+    useState<any[]>([]);
 
-  const risks =
-    (events ?? []).map(
-      (
-        event,
-        index
-      ) => ({
+  const [anomalies, setAnomalies] =
+    useState<any[]>([]);
 
-        user:
-          event.source ||
-          "unknown",
+  useEffect(() => {
 
-        risk_score:
-          90 - index * 3,
+    const load = async () => {
 
-        severity:
-          event.severity,
-      })
-    );
+      try {
 
-  const anomalies =
-    (events ?? []).map(
-      (
-        event,
-        index
-      ) => ({
+        const riskRes =
+          await fetch(
+            "http://localhost:8060/risks"
+          );
 
-        type:
-          event.attack_type,
+        const riskData =
+          await riskRes.json();
 
-        confidence:
-          95 - index * 2,
+        setRisks(riskData);
 
-        severity:
-          event.severity,
-      })
-    );
+        const anomalyRes =
+          await fetch(
+            "http://localhost:8060/anomalies"
+          );
+
+        const anomalyData =
+          await anomalyRes.json();
+
+        setAnomalies(anomalyData);
+
+      } catch (err) {
+
+        console.error(err);
+      }
+    };
+
+    load();
+
+    const interval =
+      setInterval(load, 5000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
 
   return (
+
     <div className="
       bg-slate-950
       border
@@ -83,63 +89,44 @@ export function UEBADashboard() {
             User Risk Scores
           </h3>
 
-          <div className="
-            space-y-4
-          ">
+          <div className="space-y-4">
 
-            {(risks ?? []).map(
-              (
-                risk,
-                index
-              ) => (
+            {risks.map((risk, index) => (
 
-                <motion.div
-                  key={index}
+              <motion.div
+                key={index}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="
+                  bg-zinc-950
+                  border
+                  border-slate-700/20
+                  rounded-xl
+                  p-4
+                "
+              >
 
-                  initial={{
-                    opacity: 0,
-                    y: 10,
-                  }}
+                <div className="
+                  flex
+                  justify-between
+                ">
 
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
+                  <span className="text-white">
+                    {risk.user}
+                  </span>
 
-                  className="
-                    bg-zinc-950
-                    border
-                    border-slate-700/20
-                    rounded-xl
-                    p-4
-                  "
-                >
-
-                  <div className="
-                    flex
-                    justify-between
-                    items-center
+                  <span className="
+                    text-red-400
+                    font-bold
                   ">
+                    {risk.risk_score}
+                  </span>
 
-                    <span className="
-                      text-white
-                      font-semibold
-                    ">
-                      {risk.user}
-                    </span>
+                </div>
 
-                    <span className="
-                      text-red-400
-                      font-bold
-                    ">
-                      {risk.risk_score}
-                    </span>
+              </motion.div>
 
-                  </div>
-
-                </motion.div>
-              )
-            )}
+            ))}
 
           </div>
 
@@ -156,29 +143,15 @@ export function UEBADashboard() {
             Behavioral Anomalies
           </h3>
 
-          <div className="
-            space-y-4
-          ">
+          <div className="space-y-4">
 
-            {(anomalies ?? []).map(
-              (
-                anomaly,
-                index
-              ) => (
+            {anomalies.map(
+              (anomaly, index) => (
 
                 <motion.div
                   key={index}
-
-                  initial={{
-                    opacity: 0,
-                    y: 10,
-                  }}
-
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   className="
                     bg-zinc-950
                     border
@@ -191,25 +164,23 @@ export function UEBADashboard() {
                   <div className="
                     flex
                     justify-between
-                    items-center
                   ">
 
-                    <span className="
-                      text-white
-                    ">
-                      {anomaly.type}
+                    <span className="text-white">
+                      {anomaly.user}
                     </span>
 
                     <span className="
                       text-red-400
                       font-bold
                     ">
-                      {anomaly.confidence}%
+                      {anomaly.anomaly}
                     </span>
 
                   </div>
 
                 </motion.div>
+
               )
             )}
 

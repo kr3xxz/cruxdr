@@ -1,33 +1,142 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-
-import { useEventStore } from "@/store/event-store";
 
 export function AIPanel() {
 
-  const events =
-    useEventStore(
-      (state) => state.events
-    );
+  const [alerts, setAlerts] =
+    useState<any[]>([]);
+
+  useEffect(() => {
+
+    const loadAlerts =
+      async () => {
+
+        try {
+
+          const res =
+            await fetch(
+              "http://localhost:8050/alerts"
+            );
+
+          const data =
+            await res.json();
+
+          setAlerts(data);
+
+        } catch (err) {
+
+          console.error(err);
+        }
+      };
+
+    loadAlerts();
+
+    const interval =
+      setInterval(
+        loadAlerts,
+        3000
+      );
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
 
   const latest =
-    events[0];
+    alerts[0];
 
   const severity =
     latest?.severity ||
-    "medium";
+    "none";
 
-  const attack =
-    latest?.attack_type ||
-    "Suspicious activity";
+  const title =
+    latest?.title ||
+    "No Active Threats";
 
-  const recommendation =
-    severity === "critical"
-      ? "Immediately isolate affected systems and block malicious indicators."
-      : severity === "high"
-      ? "Investigate suspicious activity and monitor lateral movement."
-      : "Monitor affected systems.";
+  const getRecommendation =
+    () => {
+
+      if (!latest)
+        return "No active threats detected.";
+
+      if (
+        title.includes(
+          "Ransomware"
+        )
+      ) {
+
+        return `
+• Isolate affected endpoint
+• Block malicious processes
+• Investigate encrypted files
+• Restore from backup
+`;
+      }
+
+      if (
+        title.includes(
+          "Lateral Movement"
+        )
+      ) {
+
+        return `
+• Investigate remote execution
+• Review PsExec activity
+• Audit privileged accounts
+• Rotate credentials
+`;
+      }
+
+      if (
+        title.includes(
+          "Phishing"
+        )
+      ) {
+
+        return `
+• Quarantine malicious emails
+• Reset impacted accounts
+• Review email gateway logs
+• Block malicious domains
+`;
+      }
+
+      if (
+        title.includes(
+          "Exfiltration"
+        )
+      ) {
+
+        return `
+• Block outbound connection
+• Inspect transferred files
+• Review firewall logs
+• Monitor data access
+`;
+      }
+
+      if (
+        title.includes(
+          "Mimikatz"
+        )
+      ) {
+
+        return `
+• Reset privileged credentials
+• Review LSASS access
+• Hunt for credential dumping
+• Isolate affected hosts
+`;
+      }
+
+      return `
+• Investigate alert source
+• Review host telemetry
+• Monitor affected assets
+`;
+    };
 
   return (
 
@@ -84,9 +193,7 @@ export function AIPanel() {
             Threat Analysis
           </h3>
 
-          <div className="
-            space-y-4
-          ">
+          <div className="space-y-4">
 
             <div>
 
@@ -121,7 +228,7 @@ export function AIPanel() {
                 text-white
                 text-lg
               ">
-                {attack} activity detected across monitored assets.
+                {title}
               </p>
 
             </div>
@@ -165,20 +272,16 @@ export function AIPanel() {
             rounded-xl
             p-5
             text-zinc-200
-            leading-7
+            whitespace-pre-line
           ">
-
-            {recommendation}
-
+            {getRecommendation()}
           </div>
 
         </motion.div>
 
       </div>
 
-      <div className="
-        mt-10
-      ">
+      <div className="mt-10">
 
         <h3 className="
           text-white
@@ -189,13 +292,11 @@ export function AIPanel() {
           Live Security Telemetry
         </h3>
 
-        <div className="
-          space-y-4
-        ">
+        <div className="space-y-4">
 
-          {events.map(
+          {alerts.map(
             (
-              event,
+              alert,
               index
             ) => (
 
@@ -229,23 +330,29 @@ export function AIPanel() {
 
                   <h4 className="
                     text-white
-                    text-2xl
+                    text-xl
                     font-bold
-                    mb-3
+                    mb-2
                   ">
-                    {event.attack_type}
+                    {alert.title}
                   </h4>
 
                   <p className="
                     text-zinc-400
                   ">
-                    MITRE: {event.mitre}
+                    Host: {alert.event?.host || "N/A"}
                   </p>
 
                   <p className="
                     text-zinc-400
                   ">
-                    Source: {event.source}
+                    User: {alert.event?.user || "N/A"}
+                  </p>
+
+                  <p className="
+                    text-zinc-400
+                  ">
+                    {alert.event?.message || ""}
                   </p>
 
                 </div>
@@ -253,13 +360,14 @@ export function AIPanel() {
                 <div className="
                   text-red-400
                   font-bold
-                  text-2xl
+                  text-xl
                   uppercase
                 ">
-                  {event.severity}
+                  {alert.severity}
                 </div>
 
               </motion.div>
+
             )
           )}
 

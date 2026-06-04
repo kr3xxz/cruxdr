@@ -1,11 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
 import { motion } from "framer-motion";
-
-import { useAlertStore } from "@/store/alert-store";
-import { useEventStore } from "@/store/event-store";
 import { useSecurityStore } from "@/store/security-store";
 
 const attacks = [
@@ -20,21 +16,6 @@ export function SOCCommandCenter() {
 
   const [logs, setLogs] =
     useState<string[]>([]);
-
-  const addAlert =
-    useAlertStore(
-      (state) => state.addAlert
-    );
-
-  const addEvent =
-    useEventStore(
-      (state) => state.addEvent
-    );
-
-  const clearEvents =
-    useEventStore(
-      (state) => state.clearEvents
-    );
 
   const blockedIPs =
     useSecurityStore(
@@ -61,9 +42,7 @@ export function SOCCommandCenter() {
       ) {
 
         setLogs((prev) => [
-
           `[ATTACK BLOCKED] ${sourceIP} denied by SOAR policy`,
-
           ...prev,
         ]);
 
@@ -85,106 +64,14 @@ export function SOCCommandCenter() {
 
         console.log(data);
 
+        window.dispatchEvent(
+          new Event("logs-updated")
+        );
+
       } catch (err) {
 
         console.error(err);
       }
-
-      let severity =
-        "medium";
-
-      let mitre =
-        "T1021";
-
-      if (
-        attack ===
-        "ransomware"
-      ) {
-
-        severity =
-          "critical";
-
-        mitre =
-          "T1486";
-      }
-
-      if (
-        attack ===
-        "brute_force"
-      ) {
-
-        severity =
-          "high";
-
-        mitre =
-          "T1110";
-      }
-
-      if (
-        attack ===
-        "exfiltration"
-      ) {
-
-        severity =
-          "critical";
-
-        mitre =
-          "T1041";
-      }
-
-      if (
-        attack ===
-        "phishing"
-      ) {
-
-        severity =
-          "high";
-
-        mitre =
-          "T1566";
-      }
-
-      addAlert({
-        title: attack,
-        severity,
-      });
-
-      addEvent({
-        title: attack,
-        attack_type:
-          attack,
-
-        severity,
-
-        mitre,
-
-        source:
-          sourceIP,
-
-        timestamp:
-          new Date()
-            .toISOString(),
-      });
-
-      window.dispatchEvent(
-        new Event("logs-updated")
-      );
-
-      setTimeout(() => {
-
-        window.dispatchEvent(
-          new Event("logs-updated")
-        );
-
-      }, 500);
-
-      setTimeout(() => {
-
-        window.dispatchEvent(
-          new Event("logs-updated")
-        );
-
-      }, 1500);
 
       setLogs((prev) => [
 
@@ -199,8 +86,6 @@ export function SOCCommandCenter() {
       action: string
     ) => {
 
-      clearEvents();
-
       addBlockedIP(
         sourceIP
       );
@@ -208,8 +93,6 @@ export function SOCCommandCenter() {
       setLogs((prev) => [
 
         `[SOAR ACTION] ${action}`,
-
-        `[THREATS MITIGATED] Active incidents cleared`,
 
         `[IP BLOCKED] ${sourceIP} added to deny list`,
 
@@ -319,13 +202,11 @@ export function SOCCommandCenter() {
           ">
 
             <button
-
               onClick={() =>
                 executeResponse(
                   "block-ip"
                 )
               }
-
               className="
                 bg-zinc-900
                 border
@@ -341,13 +222,11 @@ export function SOCCommandCenter() {
             </button>
 
             <button
-
               onClick={() =>
                 executeResponse(
                   "isolate-host"
                 )
               }
-
               className="
                 bg-zinc-900
                 border
@@ -363,13 +242,11 @@ export function SOCCommandCenter() {
             </button>
 
             <button
-
               onClick={() =>
                 executeResponse(
                   "disable-user"
                 )
               }
-
               className="
                 bg-zinc-900
                 border
@@ -445,6 +322,7 @@ export function SOCCommandCenter() {
           )}
 
         </div>
+
       </div>
     </div>
   );

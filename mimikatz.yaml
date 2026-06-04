@@ -9,5 +9,8 @@ description: Detect Mimikatz execution
 detection:
   keywords:
     - mimikatz
+    - mimikatz.exe
     - sekurlsa
-    - logonpasswords
+
+tags:
+  - attack.t1003

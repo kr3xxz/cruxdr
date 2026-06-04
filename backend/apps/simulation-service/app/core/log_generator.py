@@ -78,3 +78,33 @@ class LogGenerator:
                 "message": "Large outbound transfer detected",
             }
         ]
+
+    @staticmethod
+    def phishing():
+
+        return [
+            {
+                "timestamp": str(datetime.utcnow()),
+                "host": "MAIL-SERVER-01",
+                "user": "victim.user",
+                "event_id": 4104,
+                "severity": "high",
+                "message": "User clicked malicious phishing link",
+                "url": "http://evil-phishing-site.com",
+            }
+        ]
+
+    @staticmethod
+    def lateral_movement():
+
+        return [
+            {
+                "timestamp": str(datetime.utcnow()),
+                "host": "SERVER-01",
+                "user": "administrator",
+                "event_id": 4624,
+                "severity": "high",
+                "message": "PsExec remote execution detected",
+                "tool": "PsExec",
+            }
+        ]

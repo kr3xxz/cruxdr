@@ -1,0 +1,16 @@
+title: PowerShell Download Detection
+
+id: sigma-powershell-001
+
+severity: high
+
+description: Detect PowerShell downloading malware
+
+detection:
+  keywords:
+    - invoke-webrequest
+    - malware.exe
+    - powershell
+
+tags:
+  - attack.t1059

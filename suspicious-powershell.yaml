@@ -1,0 +1,13 @@
+title: Suspicious PowerShell Download
+
+id: sigma-powershell-002
+
+severity: high
+
+description: Detect PowerShell download activity
+
+detection:
+  keywords:
+    - invoke-webrequest
+    - downloadstring
+    - powershell

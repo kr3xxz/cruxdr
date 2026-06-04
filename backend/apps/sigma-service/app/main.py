@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.rules import router
 from app.api.logs import router as logs_router
 from app.api.upload import router as upload_router
+from app.api.clear_rules import router as clear_rules_router
 
 from app.core.processor import SigmaProcessor
 from app.core.loader import SigmaLoader
@@ -26,6 +27,7 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(logs_router)
 app.include_router(upload_router)
+app.include_router(clear_rules_router)
 
 
 @app.on_event("startup")

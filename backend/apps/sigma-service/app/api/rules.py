@@ -15,19 +15,7 @@ router = APIRouter()
 @router.get("/rules")
 async def get_rules():
 
-    if sigma_rules:
-        return sigma_rules
-
-    return [
-        {
-            "title": "Ransomware Detection",
-            "severity": "critical",
-        },
-        {
-            "title": "Phishing Detection",
-            "severity": "high",
-        },
-    ]
+    return sigma_rules
 
 
 @router.get("/logs")

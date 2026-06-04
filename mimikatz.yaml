@@ -1,0 +1,13 @@
+title: Mimikatz Credential Dumping Detection
+
+id: sigma-mimikatz-001
+
+severity: critical
+
+description: Detect Mimikatz execution
+
+detection:
+  keywords:
+    - mimikatz
+    - sekurlsa
+    - logonpasswords

@@ -1,3 +1,6 @@
+from app.store.rules import sigma_rules
+
+
 class SigmaMatcher:
 
     @staticmethod
@@ -5,79 +8,56 @@ class SigmaMatcher:
 
         alerts = []
 
-        event_type = event.get(
-            "event_type",
-            ""
-        )
-
-        raw = event.get(
-            "raw",
-            ""
+        raw = str(
+            event.get("raw", "")
         ).lower()
 
-        if event_type == "failed_login":
+        message = str(
+            event.get("message", "")
+        ).lower()
 
-            alerts.append(
-                {
-                    "title": "Failed Login Attempt",
-                    "severity": "medium",
-                    "event": event,
-                }
+        content = (
+            raw + " " + message
+        )
+
+        for rule in sigma_rules:
+
+            detection = rule.get(
+                "detection",
+                {}
             )
 
-        if event_type == "credential_access":
-
-            alerts.append(
-                {
-                    "title": "Credential Access Detected",
-                    "severity": "high",
-                    "event": event,
-                }
+            keywords = detection.get(
+                "keywords",
+                []
             )
 
-        if event_type == "lateral_movement":
+            for keyword in keywords:
 
-            alerts.append(
-                {
-                    "title": "Lateral Movement Detected",
-                    "severity": "high",
-                    "event": event,
-                }
-            )
+                if (
+                    keyword.lower()
+                    in content
+                ):
 
-        if event_type == "data_exfiltration":
+                    alerts.append(
+                        {
+                            "title":
+                                rule.get(
+                                    "title",
+                                    "Sigma Match"
+                                ),
 
-            alerts.append(
-                {
-                    "title": "Data Exfiltration Detected",
-                    "severity": "critical",
-                    "event": event,
-                }
-            )
+                            "severity":
+                                rule.get(
+                                    "severity",
+                                    "medium"
+                                ),
 
-        if event_type == "privilege_escalation":
+                            "event":
+                                event,
+                        }
+                    )
 
-            alerts.append(
-                {
-                    "title": "Privilege Escalation Detected",
-                    "severity": "high",
-                    "event": event,
-                }
-            )
-
-        if (
-            event_type == "ransomware"
-            or "encryptor" in raw
-            or "encrypted" in raw
-            or ".locked" in raw
-        ):
-
-            alerts.append(
-                {
-                    "title": "Possible Ransomware Detected",
-                    "severity": "critical",
-                    "event": event,
-                }
-            )
+                    break
 
         return alerts

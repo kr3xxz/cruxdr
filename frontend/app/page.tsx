@@ -1,5 +1,6 @@
 "use client";
 
+import SigmaAlertSync from "@/components/sigma/sigma-alert-sync";
 import SigmaUpload from "@/components/sigma/sigma-upload";
 import { useState, useEffect, useRef } from "react";
 import LogExplorer from "@/components/logs/log-explorer";

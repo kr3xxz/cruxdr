@@ -76,10 +76,10 @@ export function SigmaStudio() {
       const staticRules =
         prev.filter(
           (rule) =>
-            rule.name ===
+            rule.title || rule.name ===
               "Ransomware Detection" ||
 
-            rule.name ===
+            rule.title || rule.name ===
               "Phishing Detection"
         );
 
@@ -152,7 +152,7 @@ export function SigmaStudio() {
                   font-bold
                   text-lg
                 ">
-                  {rule.name}
+                  {rule.title || rule.name}
                 </h3>
 
                 <span className="

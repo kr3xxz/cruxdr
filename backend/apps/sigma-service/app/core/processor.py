@@ -23,11 +23,11 @@ class SigmaProcessor:
             print("[*] SIGMA PROCESSOR STARTED")
 
             consumer = KafkaConsumer(
-                "logs",
+                "cruxdr-logs",
                 bootstrap_servers="kafka:9092",
                 value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-                auto_offset_reset="latest",
-                group_id=None
+                auto_offset_reset="earliest",
+                group_id="sigma-service"
             )
 
             print("[*] KAFKA CONNECTED")
@@ -37,6 +37,7 @@ class SigmaProcessor:
             while True:
 
                 messages = consumer.poll(timeout_ms=100)
+                print(f"[POLL] {messages}")
 
                 for tp, records in messages.items():
 

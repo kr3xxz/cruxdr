@@ -5,35 +5,17 @@ class SigmaMatcher:
 
         alerts = []
 
-        process_name = event.get(
-            "process_name",
+        event_type = event.get(
+            "event_type",
             ""
         )
 
-        event_id = event.get(
-            "event_id"
-        )
-
-        message = event.get(
-            "message",
+        raw = event.get(
+            "raw",
             ""
-        )
+        ).lower()
 
-        if (
-            process_name == "powershell.exe"
-        ):
-
-            alerts.append(
-                {
-                    "title": "Suspicious PowerShell Activity",
-                    "severity": "high",
-                    "event": event,
-                }
-            )
-
-        if (
-            event_id == 4625
-        ):
+        if event_type == "failed_login":
 
             alerts.append(
                 {
@@ -43,8 +25,51 @@ class SigmaMatcher:
                 }
             )
 
+        if event_type == "credential_access":
+
+            alerts.append(
+                {
+                    "title": "Credential Access Detected",
+                    "severity": "high",
+                    "event": event,
+                }
+            )
+
+        if event_type == "lateral_movement":
+
+            alerts.append(
+                {
+                    "title": "Lateral Movement Detected",
+                    "severity": "high",
+                    "event": event,
+                }
+            )
+
+        if event_type == "data_exfiltration":
+
+            alerts.append(
+                {
+                    "title": "Data Exfiltration Detected",
+                    "severity": "critical",
+                    "event": event,
+                }
+            )
+
+        if event_type == "privilege_escalation":
+
+            alerts.append(
+                {
+                    "title": "Privilege Escalation Detected",
+                    "severity": "high",
+                    "event": event,
+                }
+            )
+
         if (
-            "encryption" in message.lower()
+            event_type == "ransomware"
+            or "encryptor" in raw
+            or "encrypted" in raw
+            or ".locked" in raw
         ):
 
             alerts.append(

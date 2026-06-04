@@ -13,7 +13,7 @@ export default function LiveAlerts() {
 
       const res =
         await fetch(
-          "http://localhost:8080/alerts"
+          "http://localhost:8050/alerts"
         );
 
       const data =

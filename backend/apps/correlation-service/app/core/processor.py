@@ -15,80 +15,192 @@ class IncidentProcessor:
 
         while True:
 
-            messages = consumer.poll(timeout_ms=100)
+            try:
 
-            for tp, records in messages.items():
+                messages = consumer.poll(
+                    timeout_ms=100
+                )
 
-                for message in records:
+                for tp, records in messages.items():
 
-                    alert = message.value
+                    for message in records:
 
-                    incident = {
-                        "title": alert.get("title"),
-                        "severity": alert.get("severity"),
-                        "host": alert["event"].get("host"),
-                        "user": alert["event"].get("user"),
-                        "mitre": IncidentProcessor.map_mitre(alert),
+                        alert = message.value
 
-                        "timeline": [
-                            {
-                                "step": "Detection",
-                                "description": alert["event"].get(
-                                    "message"
+                        title = (
+                            alert.get("title")
+                            or alert.get("alert_type")
+                            or "Unknown Alert"
+                        )
+
+                        incident = {
+
+                            "title": title,
+
+                            "severity": alert.get(
+                                "severity",
+                                "medium"
+                            ),
+
+                            "host": (
+                                alert.get(
+                                    "event",
+                                    {}
+                                ).get(
+                                    "host",
+                                    "N/A"
                                 )
-                            }
-                        ],
-
-                        "iocs": [
-                            alert["event"].get(
-                                "source_ip",
-                                "N/A"
                             ),
 
-                            alert["event"].get(
-                                "destination_ip",
-                                "N/A"
+                            "user": (
+                                alert.get(
+                                    "event",
+                                    {}
+                                ).get(
+                                    "user"
+                                )
+                                or alert.get(
+                                    "username"
+                                )
+                                or "unknown"
                             ),
-                        ],
-                    }
 
-                    incidents_store.append(
-                        incident
-                    )
+                            "mitre": (
+                                alert.get(
+                                    "mitre_attack"
+                                )
+                                or IncidentProcessor.map_mitre(
+                                    alert
+                                )
+                            ),
 
-                    incidents_store[:] = \
-                        incidents_store[-50:]
+                            "timeline": [
+                                {
+                                    "step": "Detection",
 
-                    GraphBuilder.build(
-                        alert
-                    )
+                                    "description": (
+                                        alert.get(
+                                            "event",
+                                            {}
+                                        ).get(
+                                            "message",
+                                            title
+                                        )
+                                    )
+                                }
+                            ],
 
-                    requests.post(
-                        "http://soar-service:8000/responses",
-                        json=incident
-                    )
+                            "iocs": [
+                                alert.get(
+                                    "source_ip",
+                                    "N/A"
+                                ),
 
-                    print(
-                        f"[INCIDENT] {incident}"
-                    )
+                                alert.get(
+                                    "destination_ip",
+                                    "N/A"
+                                ),
+                            ],
+                        }
+
+                        incidents_store.append(
+                            incident
+                        )
+
+                        incidents_store[:] = (
+                            incidents_store[-100:]
+                        )
+
+                        try:
+
+                            GraphBuilder.build(
+                                {
+                                    "title": title,
+
+                                    "event": {
+                                        "host":
+                                        incident["host"],
+
+                                        "user":
+                                        incident["user"],
+
+                                        "message":
+                                        incident["title"],
+                                    }
+                                }
+                            )
+
+                        except Exception as e:
+
+                            print(
+                                f"[GRAPH ERROR] {e}"
+                            )
+
+                        try:
+
+                            requests.post(
+                                "http://soar-service:8000/responses",
+                                json=incident,
+                                timeout=3,
+                            )
+
+                        except Exception as e:
+
+                            print(
+                                f"[SOAR ERROR] {e}"
+                            )
+
+                        print(
+                            f"[INCIDENT] {incident}",
+                            flush=True
+                        )
+
+            except Exception as e:
+
+                print(
+                    f"[PROCESSOR ERROR] {e}",
+                    flush=True
+                )
 
             await asyncio.sleep(0.5)
 
     @staticmethod
     def map_mitre(alert):
 
-        title = alert.get(
-            "title",
-            ""
+        title = (
+            alert.get("title")
+            or alert.get("alert_type")
+            or ""
         ).lower()
 
-        if "ransomware" in title:
-            return "T1486"
+        mappings = {
 
-        if "brute" in title:
-            return "T1110"
+            "ssh brute force":
+                "T1110",
 
-        if "exfiltration" in title:
-            return "T1041"
+            "account compromise":
+                "T1078",
 
-        return "T1021"
+            "credential dumping":
+                "T1003",
+
+            "privilege escalation":
+                "T1068",
+
+            "lateral movement":
+                "T1021",
+
+            "data exfiltration":
+                "T1041",
+
+            "ransomware":
+                "T1486",
+        }
+
+        for key, value in mappings.items():
+
+            if key in title:
+
+                return value
+
+        return "T1595"

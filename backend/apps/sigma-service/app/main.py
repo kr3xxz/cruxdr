@@ -7,6 +7,7 @@ from app.api.rules import router
 from app.api.logs import router as logs_router
 
 from app.core.processor import SigmaProcessor
+from app.core.loader import SigmaLoader
 
 
 app = FastAPI(
@@ -29,6 +30,8 @@ app.include_router(logs_router)
 async def startup():
 
     print("[*] STARTUP EVENT FIRED")
+
+    SigmaLoader.load_rules()
 
     asyncio.create_task(
         SigmaProcessor.start()

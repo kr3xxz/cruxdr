@@ -5,19 +5,26 @@ from app.data.store import (
     alerts_store,
 )
 
+from app.store.rules import (
+    sigma_rules,
+)
+
 router = APIRouter()
 
 
 @router.get("/rules")
 async def get_rules():
 
+    if sigma_rules:
+        return sigma_rules
+
     return [
         {
-            "name": "Ransomware Detection",
+            "title": "Ransomware Detection",
             "severity": "critical",
         },
         {
-            "name": "Phishing Detection",
+            "title": "Phishing Detection",
             "severity": "high",
         },
     ]

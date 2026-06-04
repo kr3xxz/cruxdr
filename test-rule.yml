@@ -1,0 +1,9 @@
+title: Test Brute Force
+logsource:
+  product: linux
+
+detection:
+  event_action: failed_login
+  threshold: 5
+
+level: high

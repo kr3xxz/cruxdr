@@ -24,6 +24,7 @@ export function LiveAttackGraph() {
           await res.json();
 
         setGraph(data);
+        console.log("GRAPH DATA:", data);
 
       } catch (err) {
 

@@ -1,4 +1,5 @@
 from app.core.sigma_loader import load_sigma_rules
+from app.core.kafka import producer
 RULES = load_sigma_rules()
 print("DETECTION SERVICE STARTED")
 from app.core.incidents import save_incident
@@ -41,6 +42,7 @@ for message in consumer:
     if "T1110" in ATTACK_CHAINS[ip] and "T1078" in ATTACK_CHAINS[ip]:
 
         incident = {
+                "event": {"host": ip, "user": event.get("username","root"), "message": "Account Compromise Detected"},
             "incident_type": "Account Compromise",
             "source_ip": ip,
             "severity": "CRITICAL",
@@ -48,6 +50,7 @@ for message in consumer:
         }
 
         save_incident(incident)
+        producer.send("alerts", {"title":"Account Compromise","severity":"CRITICAL","event":{"host":ip,"user":event.get("username","root"),"message":"Account Compromise"}})
 
         print(f"[ACCOUNT COMPROMISE] {ip}", flush=True)
 
@@ -63,6 +66,7 @@ for message in consumer:
         if FAILED_LOGINS[ip] >= 5:
 
             incident = {
+                "event": {"host": ip, "user": event.get("username","root"), "message": "Account Compromise Detected"},
                 "incident_type": "Brute Force Incident",
                 "source_ip": ip,
                 "count": FAILED_LOGINS[ip],
@@ -71,6 +75,7 @@ for message in consumer:
             }
 
             INCIDENTS.append(incident)
+            producer.send("alerts", {"title":"SSH Brute Force","severity":"HIGH","event":{"host":ip,"user":event.get("username","root"),"message":"Brute Force Detected","source_ip":ip}})
             save_incident(incident)
 
             print(

@@ -1,0 +1,4 @@
+title: Failed Login Detection
+id: sigma-failed-login-001
+severity: medium
+description: Detect repeated failed logins

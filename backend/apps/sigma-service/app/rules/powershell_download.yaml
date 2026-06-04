@@ -1,0 +1,22 @@
+title: PowerShell Download Detection
+
+id: sigma-powershell-001
+
+severity: high
+
+description: Detect malicious PowerShell downloads
+
+logsource:
+  product: cruxdr
+
+detection:
+  keywords:
+    - Invoke-WebRequest
+    - DownloadString
+    - powershell
+
+mitre:
+  technique: T1059.001
+
+tags:
+  - attack.execution

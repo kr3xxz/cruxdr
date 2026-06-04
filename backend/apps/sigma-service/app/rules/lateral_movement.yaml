@@ -1,0 +1,4 @@
+title: Lateral Movement Detection
+id: sigma-lateral-001
+severity: high
+description: Detect lateral movement activity

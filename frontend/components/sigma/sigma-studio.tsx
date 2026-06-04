@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { motion } from "framer-motion";
-
 import { useAlertStore } from "@/store/alert-store";
 
 export function SigmaStudio() {
@@ -18,102 +16,59 @@ export function SigmaStudio() {
 
   useEffect(() => {
 
-    fetchRules();
+    const loadRules =
+      async () => {
+
+        try {
+
+          const res =
+            await fetch(
+              "http://localhost:8050/rules"
+            );
+
+          const data =
+            await res.json();
+
+          setRules(data);
+
+        } catch (e) {
+
+          console.error(e);
+        }
+      };
+
+    loadRules();
+    const interval = setInterval(loadRules, 3000);
+
+    return () => clearInterval(interval);
 
   }, []);
 
-  const fetchRules =
-    async () => {
-
-      try {
-
-        const res = await fetch(
-          "http://localhost:8050/rules"
-        );
-
-        const data =
-          await res.json();
-
-        const dynamicRules =
-          (alerts ?? []).map(
-            (alert) => ({
-
-              name:
-                `${alert.title} Detection`,
-
-              severity:
-                alert.severity,
-            })
-          );
-
-        setRules([
-          ...dynamicRules,
-          ...data,
-        ]);
-
-      } catch (e) {
-
-        console.error(e);
-      }
-    };
-
-  useEffect(() => {
-
-    const dynamicRules =
-      (alerts ?? []).map(
-        (alert) => ({
-
-          name:
-            `${alert.title} Detection`,
-
-          severity:
-            alert.severity,
-        })
-      );
-
-    setRules((prev) => {
-
-      const staticRules =
-        prev.filter(
-          (rule) =>
-            rule.title || rule.name ===
-              "Ransomware Detection" ||
-
-            rule.title || rule.name ===
-              "Phishing Detection"
-        );
-
-      return [
-        ...dynamicRules,
-        ...staticRules,
-      ];
-    });
-
-  }, [alerts]);
-
   return (
-    <div className="
-      bg-zinc-900
-      border
-      border-zinc-800
-      rounded-xl
-      p-6
-    ">
+    <div
+      className="
+        bg-zinc-900
+        border
+        border-zinc-800
+        rounded-xl
+        p-6
+      "
+    >
 
-      <h2 className="
-        text-white
-        text-2xl
-        font-bold
-        mb-6
-      ">
+      <h2
+        className="
+          text-white
+          text-2xl
+          font-bold
+          mb-6
+        "
+      >
         Sigma Studio
       </h2>
 
-      <div className="
-        space-y-4
-      ">
+      <div className="space-y-4">
 
-        {(rules ?? []).map(
+        {rules.map(
           (
             rule,
             index
@@ -121,17 +76,14 @@ export function SigmaStudio() {
 
             <motion.div
               key={index}
-
               initial={{
                 opacity: 0,
                 y: 10,
               }}
-
               animate={{
                 opacity: 1,
                 y: 0,
               }}
-
               className="
                 bg-slate-950
                 border
@@ -141,24 +93,45 @@ export function SigmaStudio() {
               "
             >
 
-              <div className="
-                flex
-                justify-between
-                items-center
-              ">
+              <div
+                className="
+                  flex
+                  justify-between
+                  items-center
+                "
+              >
 
-                <h3 className="
-                  text-white
-                  font-bold
-                  text-lg
-                ">
-                  {rule.title || rule.name}
-                </h3>
+                <div>
 
-                <span className="
-                  text-red-400
-                  font-semibold
-                ">
+                  <h3
+                    className="
+                      text-white
+                      font-bold
+                      text-lg
+                    "
+                  >
+                    {rule.title}
+                  </h3>
+
+                  <p
+                    className="
+                      text-zinc-400
+                      text-sm
+                      mt-1
+                    "
+                  >
+                    {rule.description}
+                  </p>
+
+                </div>
+
+                <span
+                  className="
+                    text-red-400
+                    font-semibold
+                    uppercase
+                  "
+                >
                   {rule.severity}
                 </span>
 
@@ -170,24 +143,22 @@ export function SigmaStudio() {
 
       </div>
 
-      <div className="
-        mt-8
-      ">
+      <div className="mt-8">
 
-        <h3 className="
-          text-red-400
-          text-xl
-          font-semibold
-          mb-4
-        ">
-          Triggered Alerts
+        <h3
+          className="
+            text-red-400
+            text-xl
+            font-semibold
+            mb-4
+          "
+        >
+          Triggered Alerts ({alerts.length})
         </h3>
 
-        <div className="
-          space-y-3
-        ">
+        <div className="space-y-3">
 
-          {(alerts ?? []).map(
+          {alerts.map(
             (
               alert,
               index
@@ -195,32 +166,38 @@ export function SigmaStudio() {
 
               <div
                 key={index}
-
                 className="
                   bg-slate-950
                   border
-                  border-slate-700/20
+                  border-red-900/20
                   rounded-lg
                   p-4
                 "
               >
 
-                <div className="
-                  flex
-                  justify-between
-                  items-center
-                ">
+                <div
+                  className="
+                    flex
+                    justify-between
+                    items-center
+                  "
+                >
 
-                  <p className="
-                    text-white
-                  ">
+                  <p
+                    className="
+                      text-white
+                    "
+                  >
                     {alert.title}
                   </p>
 
-                  <span className="
-                    text-red-400
-                    font-bold
-                  ">
+                  <span
+                    className="
+                      text-red-400
+                      font-bold
+                      uppercase
+                    "
+                  >
                     {alert.severity}
                   </span>
 

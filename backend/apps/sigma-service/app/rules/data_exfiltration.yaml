@@ -1,0 +1,4 @@
+title: Data Exfiltration Detection
+id: sigma-exfil-001
+severity: critical
+description: Detect suspicious data transfers

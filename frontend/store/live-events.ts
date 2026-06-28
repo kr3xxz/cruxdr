@@ -6,6 +6,8 @@ interface EventStore {
   addEvent: (
     event: any
   ) => void;
+
+  clearEvents: () => void;
 }
 
 export const useEventStore =
@@ -19,4 +21,9 @@ export const useEventStore =
           ...state.events,
         ].slice(0, 100),
       })),
+
+    clearEvents: () =>
+      set({
+        events: [],
+      }),
   }));

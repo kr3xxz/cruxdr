@@ -1,0 +1,22 @@
+title: Data Exfiltration via DNS Tunneling
+id: b0c1d2e3-f4a5-4b6c-8d7e-8f9a0b1c2d20
+status: stable
+description: Detects anomalous DNS query patterns consistent with DNS tunneling used to exfiltrate data from compromised networks. Attackers encode stolen data within DNS queries to bypass network security controls and exfiltrate information through allowed DNS traffic.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1048/003/
+tags:
+  - attack.exfiltration
+  - attack.t1048.003
+logsource:
+  category: dns_query
+  product: windows
+detection:
+  keywords:
+    - "T1048.003-dns"
+    - "DNS tunnel"
+falsepositives:
+  - Legitimate dynamic DNS update service traffic
+  - CDN and content delivery network routing and resolution traffic
+level: critical

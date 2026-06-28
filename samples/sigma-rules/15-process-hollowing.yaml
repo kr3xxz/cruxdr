@@ -1,0 +1,22 @@
+title: Process Hollowing Detection via CreateRemoteThread
+id: c5d6e7f8-a9b0-4c1d-8e2f-3a4b5c6d7e15
+status: stable
+description: Detects the use of CreateRemoteThread API which is commonly employed in process hollowing attacks to inject code into a suspended legitimate process. This technique enables attackers to execute arbitrary code under the guise of a trusted system process while evading detection.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1055/001/
+tags:
+  - attack.defense-evasion
+  - attack.t1055.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  keywords:
+    - "T1055.001-hollow"
+    - "CreateRemoteThread"
+falsepositives:
+  - Legitimate debugging and analysis tools that attach to target processes
+  - Security monitoring software that inspects process execution behavior
+level: high

@@ -21,6 +21,8 @@ class SigmaLoader:
 
             if file.endswith(
                 ".yaml"
+            ) or file.endswith(
+                ".yml"
             ):
 
                 with open(

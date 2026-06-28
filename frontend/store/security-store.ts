@@ -7,6 +7,8 @@ interface SecurityStore {
   addBlockedIP: (
     ip: string
   ) => void;
+
+  clearBlockedIPs: () => void;
 }
 
 export const useSecurityStore =
@@ -26,4 +28,7 @@ export const useSecurityStore =
             ip,
           ],
         })),
+
+      clearBlockedIPs: () =>
+        set({ blockedIPs: [] }),
     }))

@@ -41,32 +41,42 @@ class AttackGenerator:
 
         while True:
 
-            attack = random.choice(
-                attacks
-            )()
+            try:
 
-            producer.send(
-                "siem-events",
-                attack,
-            )
+                attack = random.choice(
+                    attacks
+                )()
 
-            graph = (
-                AttackGraphEngine
-                .process_attack(
+                producer.send(
+                    "siem-events",
+                    attack,
+                )
+
+                graph = (
+                    AttackGraphEngine
+                    .process_attack(
+                        attack
+                    )
+                )
+
+                await manager.broadcast(
                     attack
                 )
-            )
 
-            await manager.broadcast(
-                attack
-            )
+                await graph_manager.broadcast(
+                    graph
+                )
 
-            await graph_manager.broadcast(
-                graph
-            )
+                print(
+                    f"[ATTACK] {attack}",
+                    flush=True,
+                )
 
-            print(
-                f"[ATTACK] {attack}"
-            )
+            except Exception as e:
+
+                print(
+                    f"[ERROR] {e}",
+                    flush=True,
+                )
 
             await asyncio.sleep(2)

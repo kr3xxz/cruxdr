@@ -14,6 +14,8 @@ interface AlertState {
   addAlert: (
     alert: Alert
   ) => void;
+
+  clearAlerts: () => void;
 }
 
 export const useAlertStore =
@@ -30,4 +32,7 @@ export const useAlertStore =
           ...state.alerts,
         ],
       })),
+
+    clearAlerts: () =>
+      set({ alerts: [] }),
   }));

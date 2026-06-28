@@ -1,0 +1,22 @@
+title: Windows Defender Disable via Registry Modification
+id: b4c5d6e7-f8a9-4b0c-8d1e-2f3a4b5c6d14
+status: stable
+description: Detects registry modifications that disable Windows Defender real-time monitoring by setting DisableRealtimeMonitoring to an enabled state. Attackers disable antivirus protection to prevent detection of their malicious payloads and maintain persistence undetected.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1562/001/
+tags:
+  - attack.defense-evasion
+  - attack.t1562.001
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  keywords:
+    - "T1562.001-defender"
+    - "DisableRealtimeMonitoring"
+falsepositives:
+  - Administrators temporarily disabling Defender during software installations
+  - Enterprise endpoint management policies that configure Defender settings
+level: critical

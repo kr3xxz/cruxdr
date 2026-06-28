@@ -1,6 +1,10 @@
 "use client";
 
 import { useUIStore } from "@/store/ui-store";
+import { useEventStore } from "@/store/live-events";
+import { useAlertStore } from "@/store/alert-store";
+import { useSecurityStore } from "@/store/security-store";
+import { useGraphStore } from "@/store/graph-store";
 
 const items = [
   "dashboard",
@@ -19,6 +23,22 @@ export function Sidebar() {
     setActiveTab,
   } = useUIStore();
 
+  const clearEvents = useEventStore((state) => state.clearEvents);
+  const clearAlerts = useAlertStore((state) => state.clearAlerts);
+  const clearBlockedIPs = useSecurityStore((state) => state.clearBlockedIPs);
+  const clearGraph = useGraphStore((state) => state.clearGraph);
+
+  const clearAll = () => {
+    clearEvents();
+    clearAlerts();
+    clearBlockedIPs();
+    clearGraph();
+    fetch("http://localhost:8030/incidents", { method: "DELETE" }).catch(() => {});
+    fetch("http://localhost:8030/graph", { method: "DELETE" }).catch(() => {});
+    fetch("http://localhost:8080/logs", { method: "DELETE" }).catch(() => {});
+    fetch("http://localhost:8060/reset", { method: "DELETE" }).catch(() => {});
+  };
+
   return (
     <aside className="
       w-64
@@ -27,6 +47,8 @@ export function Sidebar() {
       border-r
       border-zinc-800
       p-6
+      flex
+      flex-col
     ">
 
       <h1 className="
@@ -42,6 +64,7 @@ export function Sidebar() {
         flex
         flex-col
         gap-3
+        flex-1
       ">
 
         {items.map((item) => (
@@ -73,6 +96,25 @@ export function Sidebar() {
         ))}
 
       </div>
+
+      <button
+        onClick={clearAll}
+        className="
+          px-4
+          py-3
+          rounded-xl
+          text-sm
+          text-red-400
+          border
+          border-red-900/40
+          bg-red-950/20
+          hover:bg-red-950/50
+          transition-colors
+          text-center
+        "
+      >
+        Clear All Data
+      </button>
 
     </aside>
   );

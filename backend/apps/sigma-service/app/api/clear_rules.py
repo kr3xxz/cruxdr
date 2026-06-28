@@ -12,7 +12,11 @@ async def clear_rules():
 
     for file in os.listdir(rules_dir):
 
-        if file.endswith(".yaml"):
+        if file.endswith(
+            ".yaml"
+        ) or file.endswith(
+            ".yml"
+        ):
 
             os.remove(
                 os.path.join(

@@ -1,0 +1,3 @@
+2026-06-28 10:15:01 EXFILTRATION Sysmon EventID=22 DNS query for base64-encoded.domain.tld from host finance-db T1048.003-dns
+2026-06-28 10:15:02 EXFILTRATION Sysmon EventID=22 DNS query for 61646d696e2d6372656473.domain.tld from host finance-db
+2026-06-28 10:15:03 EXFILTRATION Sysmon EventID=3 Network connection to 198.51.100.25:53 (DNS) from finance-db with high query volume

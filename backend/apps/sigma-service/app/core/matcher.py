@@ -1,7 +1,20 @@
+import re
+
 from app.store.rules import sigma_rules
 
 
 class SigmaMatcher:
+
+    @staticmethod
+    def _extract_mitre(rule):
+        for tag in rule.get("tags", []):
+            t = tag.lower()
+            if t.startswith("attack.t"):
+                mid = tag.split(".", 1)[1]
+                return mid[0].upper() + mid[1:]
+            if t.startswith("t") and "." in t:
+                return tag[0].upper() + tag[1:]
+        return ""
 
     @staticmethod
     def match(event):
@@ -39,6 +52,8 @@ class SigmaMatcher:
                     in content
                 ):
 
+                    severity = rule.get("severity") or rule.get("level") or "medium"
+
                     alerts.append(
                         {
                             "title":
@@ -47,10 +62,17 @@ class SigmaMatcher:
                                     "Sigma Match"
                                 ),
 
-                            "severity":
+                            "severity": severity,
+
+                            "mitre_attack":
+                                SigmaMatcher._extract_mitre(
+                                    rule
+                                ),
+
+                            "alert_type":
                                 rule.get(
-                                    "severity",
-                                    "medium"
+                                    "title",
+                                    "Sigma Match"
                                 ),
 
                             "event":

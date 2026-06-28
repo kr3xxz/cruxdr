@@ -1,0 +1,22 @@
+title: UAC Bypass via Fodhelper.exe Registry Manipulation
+id: e1f2a3b4-c5d6-4e7f-8a8b-9c0d1e2f3a11
+status: stable
+description: Detects registry modifications used by the fodhelper.exe UAC bypass technique to execute arbitrary code with elevated privileges. This technique abuses the ProgrammaticIdentifer registry key to bypass User Account Control without prompting the user for consent.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1548/002/
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.002
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  keywords:
+    - "T1548.002-uac"
+    - "fodhelper"
+falsepositives:
+  - Legitimate software installers that modify default application handlers
+  - System administrators testing UAC configuration and policies
+level: high

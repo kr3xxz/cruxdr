@@ -13,11 +13,15 @@ class UEBAProcessor:
 
     @staticmethod
     async def start():
+        loop = asyncio.get_event_loop()
 
         while True:
-
-            messages = consumer.poll(
-                timeout_ms=1000
+            messages = (
+                await loop.run_in_executor(
+                    None,
+                    consumer.poll,
+                    1000,
+                )
             )
 
             for tp, batch in (
@@ -28,6 +32,9 @@ class UEBAProcessor:
 
                     event = message.value
 
+                    if event is None:
+                        continue
+
                     risk = (
                         UEBAEngine
                         .process(event)
@@ -37,4 +44,4 @@ class UEBAProcessor:
                         f"[UEBA] {risk}"
                     )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)

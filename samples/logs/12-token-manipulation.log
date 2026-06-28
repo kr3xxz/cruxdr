@@ -1,0 +1,3 @@
+2026-06-28 09:35:22 PRIVILEGE_ESCALATION EventLog EventID=4672 Special privilege assigned to user: svc_deploy privilege=SeDebugPrivilege T1134.001-token
+2026-06-28 09:35:22 PRIVILEGE_ESCALATION Sysmon EventID=10 Process access: lsass.exe (PID=728) by C:\Tools\mimikatz.exe (PID=5021)
+2026-06-28 09:35:23 PRIVILEGE_ESCALATION EventLog EventID=4703 Token manipulation: SeDebugPrivilege enabled for process C:\Tools\mimikatz.exe

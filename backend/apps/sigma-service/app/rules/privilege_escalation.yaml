@@ -1,4 +1,0 @@
-title: Privilege Escalation Detection
-id: sigma-privesc-001
-severity: high
-description: Detect privilege escalation attempts

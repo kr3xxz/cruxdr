@@ -6,3 +6,4 @@ pandas
 python-dateutil
 kafka-python
 opensearch-py
+httpx

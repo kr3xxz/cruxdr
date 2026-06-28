@@ -1,0 +1,3 @@
+2026-06-28 08:25:44 CREDENTIAL_ACCESS EventLog EventID=4662 Directory Service replicated: domain=corp.local T1003.003-dcsync
+2026-06-28 08:25:44 CREDENTIAL_ACCESS Sysmon EventID=1 Process: mimikatz.exe lsadump::dcsync /user:krbtgt /domain:corp.local
+2026-06-28 08:25:45 CREDENTIAL_ACCESS EventLog EventID=4662 Directory Service Access: DN=CN=krbtgt,CN=Users,DC=corp,DC=local

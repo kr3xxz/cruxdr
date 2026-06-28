@@ -1,0 +1,3 @@
+2026-06-28 09:30:05 PRIVILEGE_ESCALATION Sysmon EventID=13 Registry modified: HKCU\Software\Classes\ms-settings\shell\open\command\(Default) by user=jdoe T1548.002-uac
+2026-06-28 09:30:05 PRIVILEGE_ESCALATION Sysmon EventID=1 Process: fodhelper.exe parent=explorer.exe child=C:\Windows\System32\cmd.exe
+2026-06-28 09:30:06 PRIVILEGE_ESCALATION EventLog EventID=4688 Elevated process: cmd.exe with administrator privileges

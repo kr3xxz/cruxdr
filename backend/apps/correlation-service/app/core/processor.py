@@ -60,6 +60,12 @@ class IncidentProcessor:
                                     "user"
                                 )
                                 or alert.get(
+                                    "event",
+                                    {}
+                                ).get(
+                                    "username"
+                                )
+                                or alert.get(
                                     "username"
                                 )
                                 or "unknown"
@@ -91,14 +97,16 @@ class IncidentProcessor:
                             ],
 
                             "iocs": [
-                                alert.get(
-                                    "source_ip",
-                                    "N/A"
+                                (
+                                    alert.get("source_ip")
+                                    or alert.get("event", {}).get("source_ip")
+                                    or "N/A"
                                 ),
 
-                                alert.get(
-                                    "destination_ip",
-                                    "N/A"
+                                (
+                                    alert.get("destination_ip")
+                                    or alert.get("event", {}).get("destination_ip")
+                                    or "N/A"
                                 ),
                             ],
                         }
@@ -117,12 +125,35 @@ class IncidentProcessor:
                                 {
                                     "title": title,
 
+                                    "severity":
+                                        incident.get(
+                                            "severity",
+                                            "medium"
+                                        ),
+
+                                    "mitre_attack":
+                                        incident.get(
+                                            "mitre",
+                                            ""
+                                        ),
+
                                     "event": {
                                         "host":
                                         incident["host"],
 
                                         "user":
                                         incident["user"],
+
+                                        "username":
+                                        incident["user"],
+
+                                        "source_ip":
+                                        incident.get(
+                                            "iocs",
+                                            []
+                                        )[0] if incident.get(
+                                            "iocs"
+                                        ) else "",
 
                                         "message":
                                         incident["title"],
@@ -167,6 +198,10 @@ class IncidentProcessor:
     @staticmethod
     def map_mitre(alert):
 
+        mitre = alert.get("mitre_attack") or ""
+        if mitre:
+            return mitre
+
         title = (
             alert.get("title")
             or alert.get("alert_type")
@@ -195,6 +230,78 @@ class IncidentProcessor:
 
             "ransomware":
                 "T1486",
+
+            "lsass memory dumping":
+                "T1003.001",
+
+            "mimikatz":
+                "T1003.001",
+
+            "sam registry":
+                "T1003.002",
+
+            "dcsync":
+                "T1003.006",
+
+            "kerberos":
+                "T1003.008",
+
+            "powershell":
+                "T1059.001",
+
+            "wmi":
+                "T1047",
+
+            "scheduled task":
+                "T1053.005",
+
+            "registry run key":
+                "T1547.001",
+
+            "service installation":
+                "T1543.003",
+
+            "startup folder":
+                "T1547.001",
+
+            "uac bypass":
+                "T1548.002",
+
+            "token manipulation":
+                "T1134",
+
+            "dll search order":
+                "T1574.001",
+
+            "defender disable":
+                "T1562.001",
+
+            "process hollowing":
+                "T1055.012",
+
+            "event log clearing":
+                "T1070.001",
+
+            "psexec":
+                "T1021.002",
+
+            "rdp brute force":
+                "T1110.001",
+
+            "smb admin share":
+                "T1021.002",
+
+            "dns tunneling":
+                "T1572",
+
+            "procdump":
+                "T1003.001",
+
+            "phishing":
+                "T1566",
+
+            "exfiltration":
+                "T1048",
         }
 
         for key, value in mappings.items():
@@ -203,4 +310,4 @@ class IncidentProcessor:
 
                 return value
 
-        return "T1595"
+        return ""

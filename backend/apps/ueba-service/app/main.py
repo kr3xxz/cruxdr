@@ -1,5 +1,13 @@
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.ueba import router as ueba_router
+
+from app.core.processor import (
+    UEBAProcessor,
+)
 
 app = FastAPI(
     title="CruXDR UEBA Service"
@@ -13,36 +21,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(ueba_router)
+
+
 @app.get("/")
 async def root():
     return {
         "service": "CruXDR UEBA Service"
     }
 
-@app.get("/risks")
-async def risks():
 
-    return [
-        {
-            "user": "admin",
-            "risk_score": 92,
-        },
-        {
-            "user": "guest",
-            "risk_score": 77,
-        },
-    ]
-
-@app.get("/anomalies")
-async def anomalies():
-
-    return [
-        {
-            "user": "john",
-            "anomaly": "Impossible Travel",
-        },
-        {
-            "user": "alice",
-            "anomaly": "Abnormal Login Time",
-        },
-    ]
+@app.on_event("startup")
+async def startup():
+    asyncio.create_task(
+        UEBAProcessor.start()
+    )
+    print("[UEBA] Processor started")

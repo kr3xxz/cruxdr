@@ -1,0 +1,22 @@
+title: Scheduled Task Malicious Creation via schtasks.exe
+id: a7b8c9d0-e1f2-4a3b-8c4d-5e6f7a8b9c07
+status: stable
+description: Detects the creation of scheduled tasks using the schtasks command-line utility. Attackers create scheduled tasks to establish persistence or execute code at system startup with elevated privileges and evade detection.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+tags:
+  - attack.execution
+  - attack.t1053.005
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  keywords:
+    - "T1053.005-task"
+    - "schtasks create"
+falsepositives:
+  - Legitimate scheduled task creation by system administrators
+  - Software installers that register tasks for automatic updates
+level: high

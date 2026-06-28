@@ -1,14 +1,9 @@
 import time
+from datetime import datetime
 
 from app.store.users import (
     user_profiles,
-)
-
-from app.store.users import (
     user_risks,
-)
-
-from app.store.users import (
     anomalies,
 )
 
@@ -20,97 +15,93 @@ from app.core.impossible_travel import (
     ImpossibleTravelEngine,
 )
 
+from app.core.anomaly_detector import (
+    AnomalyDetector,
+)
+
 
 class UEBAEngine:
 
     @staticmethod
     def process(event):
-
         event = (
             ImpossibleTravelEngine
             .enrich(event)
         )
 
         user = (
-            event.get(
-                "target_user"
-            )
+            event.get("user")
+            or event.get("username")
+            or event.get("target_user")
+            or event.get("source_ip")
             or "unknown"
         )
 
-        if user not in user_profiles:
+        now = time.time()
+        event["_ts"] = now
 
+        if user not in user_profiles:
             user_profiles[user] = []
 
-        user_profiles[user].append(
-            {
-                "timestamp":
-                time.time(),
+        user_profiles[user].append(event)
+        user_profiles[user] = user_profiles[user][-50:]
 
-                "event":
-                event,
-            }
-        )
+        recent = user_profiles[user]
 
-        recent = [
-            item["event"]
-            for item in (
-                user_profiles[user]
-            )[-10:]
-        ]
+        risk_score = UserRiskEngine.calculate(recent)
 
-        risk_score = (
-            UserRiskEngine
-            .calculate(recent)
-        )
-
-        countries = list(set([
-            e["country"]
-            for e in recent
-        ]))
-
-        anomaly = None
-
-        if len(countries) >= 3:
-
-            anomaly = {
-                "type":
-                "Impossible Travel",
-
-                "user":
-                user,
-
-                "countries":
-                countries,
-
-                "severity":
-                "critical",
-            }
-
-            anomalies.insert(
-                0,
-                anomaly,
-            )
-
-        risk = {
-            "user":
+        anomaly_list = AnomalyDetector.detect(
             user,
+            recent,
+        )
 
-            "risk_score":
-            risk_score,
+        countries = list(set(
+            e.get("country", "Unknown")
+            for e in recent if e.get("country")
+        ))
+        hosts = list(set(
+            e.get("host", "")
+            for e in recent if e.get("host")
+        ))
+        attack_types = list(set(
+            e.get("attack_type", "")
+            for e in recent if e.get("attack_type")
+        ))
 
-            "event_count":
-            len(recent),
+        timestamp = event.get(
+            "timestamp",
+            str(datetime.utcnow()),
+        )
 
-            "countries":
-            countries,
+        risk_entry = {
+            "user": user,
+            "risk_score": risk_score,
+            "event_count": len(recent),
+            "countries": countries,
+            "hosts": hosts,
+            "attack_types": attack_types,
+            "anomaly_count": len(anomaly_list),
+            "anomalies": [
+                a["type"] for a in anomaly_list
+            ],
+            "timestamp": timestamp,
         }
 
-        user_risks.insert(
-            0,
-            risk,
-        )
-
+        user_risks.insert(0, risk_entry)
         del user_risks[100:]
 
-        return risk
+        for anomaly in anomaly_list:
+            anomaly_entry = {
+                "user": user,
+                "type": anomaly["type"],
+                "severity": anomaly["severity"],
+                "details": anomaly.get(
+                    "details", ""
+                ),
+                "timestamp": timestamp,
+            }
+            anomalies.insert(0, anomaly_entry)
+
+        del anomalies[100:]
+
+        return risk_entry

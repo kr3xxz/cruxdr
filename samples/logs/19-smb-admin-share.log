@@ -1,0 +1,3 @@
+2026-06-28 10:10:33 LATERAL_MOVEMENT Sysmon EventID=3 SMB connection established to \\SRV-FILE\C$ from WS-ATTACK (10.0.0.100) T1021.002-smb
+2026-06-28 10:10:33 LATERAL_MOVEMENT Sysmon EventID=1 Process: net.exe use \\SRV-FILE\C$ /user:domain\admin * from WS-ATTACK
+2026-06-28 10:10:34 LATERAL_MOVEMENT EventLog EventID=5140 SMB share C$ accessed by domain\admin from 10.0.0.100

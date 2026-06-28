@@ -1,0 +1,3 @@
+2026-06-28 08:30:12 CREDENTIAL_ACCESS Sysmon EventID=1 Process: klist.exe export C:\Users\svc_temp\ticket.kirbi T1003.005-kerberos
+2026-06-28 08:30:12 CREDENTIAL_ACCESS EventLog EventID=4769 Kerberos service ticket requested for krbtgt from svc_account
+2026-06-28 08:30:13 CREDENTIAL_ACCESS EventLog EventID=4672 Special privilege assigned to new logon: SeTcbPrivilege

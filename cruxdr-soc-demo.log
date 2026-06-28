@@ -1,0 +1,7 @@
+2026-06-28T10:00:01Z WIN-LOGIN EventID=4625 Failed logon for user admin from 10.0.0.50 workstation=WS-001 logon_type=3
+2026-06-28T10:00:02Z WIN-SERVICE EventID=7045 Service creation on SRV-WEB by user svc_admin service_name=RemoteAgentSvc image_path=C:\Windows\System32\evil.exe
+2026-06-28T10:00:03Z FILE-PROTECT File encrypted with extension .locker on host WS-001 path=C:\Users\jdoe\Documents\accounts.xlsx user=jdoe
+2026-06-28T10:00:04Z EMAIL-SEC Phishing campaign detected malicious URL in user inbox recipient=ceo@corp.com sender=external@phish.com subject="Invoice Urgent"
+2026-06-28T10:00:05Z NET-FW Large data transfer to external IP 203.0.113.5 from host finance-db bytes=500000000 protocol=HTTPS
+2026-06-28T10:00:06Z WIN-PRIV EventID=4672 Special privilege assigned to user backup_admin privilege=SeBackupPrivilege session=1
+2026-06-28T10:00:07Z PROC-ACCESS LSASS process handle requested by C:\Tools\procdump.exe pid=4567 user=backup_admin

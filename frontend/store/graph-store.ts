@@ -10,6 +10,8 @@ interface GraphStore {
     nodes: any[],
     edges: any[]
   ) => void;
+
+  clearGraph: () => void;
 }
 
 export const useGraphStore =
@@ -27,4 +29,7 @@ export const useGraphStore =
         nodes,
         edges,
       }),
+
+    clearGraph: () =>
+      set({ nodes: [], edges: [] }),
   }));

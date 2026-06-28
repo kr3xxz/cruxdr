@@ -1,0 +1,123 @@
+# Mimikatz Credential Dumping - Sysmon Event ID 10 (ProcessAccess)
+# These logs trigger the Sigma rule mimikatz-detection.yml
+
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}"/>
+    <EventID>10</EventID>
+    <Version>3</Version>
+    <Level>4</Level>
+    <Task>10</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8000000000000000</Keywords>
+    <TimeCreated SystemTime="2026-06-28T14:23:45.123456Z"/>
+    <EventRecordID>12345</EventRecordID>
+    <Correlation/>
+    <Execution ProcessID="456" ThreadID="789"/>
+    <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    <Computer>CLIENT-PC-01.corp.cruxdr.local</Computer>
+    <Security UserID="S-1-5-18"/>
+  </System>
+  <EventData>
+    <Data Name="SourceProcessGUID">{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</Data>
+    <Data Name="SourceProcessId">6789</Data>
+    <Data Name="SourceThreadId">1234</Data>
+    <Data Name="SourceImage">C:\Users\attacker\Desktop\mimikatz.exe</Data>
+    <Data Name="TargetProcessGUID">{b2c3d4e5-f6a7-8901-bcde-f12345678901}</Data>
+    <Data Name="TargetProcessId">876</Data>
+    <Data Name="TargetImage">C:\Windows\System32\lsass.exe</Data>
+    <Data Name="GrantedAccess">0x1F1FFF</Data>
+    <Data Name="CallTrace">C:\Windows\SYSTEM32\ntdll.dll+9a624|c:\programdata\mimikatz\mimikatz.exe+3a8bc</Data>
+  </EventData>
+</Event>
+
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}"/>
+    <EventID>10</EventID>
+    <Version>3</Version>
+    <Level>4</Level>
+    <Task>10</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8000000000000000</Keywords>
+    <TimeCreated SystemTime="2026-06-28T14:23:45.654321Z"/>
+    <EventRecordID>12346</EventRecordID>
+    <Correlation/>
+    <Execution ProcessID="456" ThreadID="790"/>
+    <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    <Computer>CLIENT-PC-01.corp.cruxdr.local</Computer>
+    <Security UserID="S-1-5-18"/>
+  </System>
+  <EventData>
+    <Data Name="SourceProcessGUID">{1a2b3c4d-5e6f-7890-abcd-ef1234567890}</Data>
+    <Data Name="SourceProcessId">6790</Data>
+    <Data Name="SourceThreadId">1235</Data>
+    <Data Name="SourceImage">C:\Users\attacker\Desktop\mimikatz64.exe</Data>
+    <Data Name="TargetProcessGUID">{2b3c4d5e-6f7a-8901-bcde-f12345678901}</Data>
+    <Data Name="TargetProcessId">876</Data>
+    <Data Name="TargetImage">C:\Windows\System32\lsass.exe</Data>
+    <Data Name="GrantedAccess">0x1410</Data>
+    <Data Name="CallTrace">C:\Windows\SYSTEM32\ntdll.dll+9a624|c:\tools\mimikatz64.exe+2f8bc</Data>
+  </EventData>
+</Event>
+
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385f-c22a-43e0-bf4c-06f5698ffbd9}"/>
+    <EventID>10</EventID>
+    <Version>3</Version>
+    <Level>4</Level>
+    <Task>10</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8000000000000000</Keywords>
+    <TimeCreated SystemTime="2026-06-28T14:25:12.987654Z"/>
+    <EventRecordID>12350</EventRecordID>
+    <Correlation/>
+    <Execution ProcessID="512" ThreadID="801"/>
+    <Channel>Microsoft-Windows-Sysmon/Operational</Channel>
+    <Computer>SRV-DC-01.corp.cruxdr.local</Computer>
+    <Security UserID="S-1-5-18"/>
+  </System>
+  <EventData>
+    <Data Name="SourceProcessGUID">{3c4d5e6f-7a8b-9012-cdef-123456789012}</Data>
+    <Data Name="SourceProcessId">7012</Data>
+    <Data Name="SourceThreadId">2567</Data>
+    <Data Name="SourceImage">C:\temp\procdump64.exe</Data>
+    <Data Name="TargetProcessGUID">{4d5e6f7a-8b9c-0123-defa-234567890123}</Data>
+    <Data Name="TargetProcessId">876</Data>
+    <Data Name="TargetImage">C:\Windows\System32\lsass.exe</Data>
+    <Data Name="GrantedAccess">0x1F1FFF</Data>
+    <Data Name="CallTrace">C:\Windows\SYSTEM32\ntdll.dll+9a624|c:\temp\procdump64.exe+1a8bc</Data>
+  </EventData>
+</Event>
+
+# Mimikatz command-line execution event (Event ID 4688 - Process Creation)
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="Microsoft-Windows-Security-Auditing" Guid="{54849625-5478-4994-a5ba-3e3b0328c30d}"/>
+    <EventID>4688</EventID>
+    <Version>2</Version>
+    <Level>0</Level>
+    <Task>13312</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x8020000000000000</Keywords>
+    <TimeCreated SystemTime="2026-06-28T14:23:44.000000Z"/>
+    <EventRecordID>12344</EventRecordID>
+    <Correlation/>
+    <Execution ProcessID="4" ThreadID="8"/>
+    <Channel>Security</Channel>
+    <Computer>CLIENT-PC-01.corp.cruxdr.local</Computer>
+    <Security UserID="S-1-5-18"/>
+  </System>
+  <EventData>
+    <Data Name="SubjectUserSid">S-1-5-21-123456789-1234567890-123456789-500</Data>
+    <Data Name="SubjectUserName">Administrator</Data>
+    <Data Name="SubjectDomainName">CORP</Data>
+    <Data Name="SubjectLogonId">0x1a2b3c</Data>
+    <Data Name="NewProcessId">0x1a85</Data>
+    <Data Name="NewProcessName">C:\Users\attacker\Desktop\mimikatz.exe</Data>
+    <Data Name="CommandLine">"C:\Users\attacker\Desktop\mimikatz.exe" privilege::debug sekurlsa::logonpasswords exit</Data>
+    <Data Name="ParentProcessName">C:\Windows\System32\cmd.exe</Data>
+    <Data Name="ProcessTokenElevationType">TokenElevationTypeFull</Data>
+  </EventData>
+</Event>

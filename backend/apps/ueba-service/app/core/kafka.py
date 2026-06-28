@@ -5,21 +5,17 @@ from kafka import KafkaProducer
 
 
 def safe_deserializer(m):
-
     try:
-
         return json.loads(
             m.decode("utf-8")
         )
-
     except Exception:
-
         return None
 
 
 consumer = KafkaConsumer(
 
-    "user-events",
+    "cruxdr-logs",
 
     bootstrap_servers="crux-kafka:9092",
 

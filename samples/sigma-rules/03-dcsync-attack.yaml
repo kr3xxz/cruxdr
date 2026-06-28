@@ -1,0 +1,22 @@
+title: DCSync Attack via Mimikatz
+id: c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e03
+status: stable
+description: Detects the execution of Mimikatz DCSync attack which impersonates a Domain Controller to request account credential replication. This technique allows attackers to obtain password hashes for any domain account without code execution on a Domain Controller.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1003/003/
+tags:
+  - attack.credential-access
+  - attack.t1003.003
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  keywords:
+    - "T1003.003-dcsync"
+    - "mimikatz"
+falsepositives:
+  - Authorized red team penetration testing engagements
+  - Domain replication troubleshooting by domain administrators
+level: critical

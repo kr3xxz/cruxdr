@@ -1,0 +1,22 @@
+title: SAM Registry Access via reg.exe
+id: b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d02
+status: stable
+description: Detects attempts to access the Security Account Manager (SAM) registry hive using reg.exe. Attackers query the SAM registry to extract password hashes for offline cracking and credential reuse across the network.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1003/002/
+tags:
+  - attack.credential-access
+  - attack.t1003.002
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  keywords:
+    - "T1003.002-sam"
+    - "reg query"
+falsepositives:
+  - Legitimate registry queries by system administrators
+  - Security auditing and compliance scanning tools
+level: critical

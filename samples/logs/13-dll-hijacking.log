@@ -1,0 +1,3 @@
+2026-06-28 09:40:11 PRIVILEGE_ESCALATION Sysmon EventID=7 Image loaded: C:\Windows\System32\wlbsctrl.dll by svchost.exe (PID=1024) from non-standard path T1574.001-dll
+2026-06-28 09:40:11 PRIVILEGE_ESCALATION Sysmon EventID=7 DLL loaded: C:\Users\public\wlbsctrl.dll instead of C:\Windows\System32\wlbsctrl.dll
+2026-06-28 09:40:12 PRIVILEGE_ESCALATION EventLog EventID=4688 Process: C:\Windows\System32\svchost.exe loaded unsigned DLL

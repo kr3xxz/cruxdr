@@ -1,4 +1,7 @@
+import asyncio
+
 from fastapi import APIRouter, UploadFile, File
+import httpx
 
 from app.core.indexer import client, INDEX_NAME
 from app.core.indexer import index_event
@@ -15,6 +18,17 @@ from app.core.store import (
     EVENTS,
     ALERTS,
 )
+
+
+async def forward_to_ueba(event: dict):
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            await client.post(
+                "http://cruxdr-ueba-service:8000/event",
+                json=event,
+            )
+    except Exception:
+        pass
 
 router = APIRouter()
 
@@ -69,6 +83,12 @@ async def upload(
                 event
             )
 
+            asyncio.ensure_future(
+                forward_to_ueba(
+                    event
+                )
+            )
+
         except Exception as e:
 
             print(
@@ -91,11 +111,27 @@ async def upload(
                 flush=True
             )
 
+    sigma_alerts = []
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.post(
+                "http://cruxdr-sigma-service:8000/detect",
+                json={"events": parsed_events}
+            )
+            if resp.status_code == 200:
+                sigma_alerts = resp.json().get("alerts", [])
+                for sa in sigma_alerts:
+                    ALERTS.append(sa)
+                ALERTS[:] = ALERTS[-1000:]
+    except Exception as e:
+        print(f"[SIGMA DETECT ERROR] {e}", flush=True)
+
     return {
         "events": parsed_events,
         "alerts": alerts,
+        "sigma_alerts": sigma_alerts,
         "event_count": len(parsed_events),
-        "alert_count": len(alerts),
+        "alert_count": len(alerts) + len(sigma_alerts),
     }
 
 
@@ -103,6 +139,14 @@ async def upload(
 async def get_logs():
 
     return EVENTS
+
+
+@router.delete("/logs")
+async def clear_logs():
+
+    EVENTS.clear()
+
+    return {"message": "Logs cleared"}
 
 
 @router.get("/alerts")

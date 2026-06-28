@@ -1,0 +1,22 @@
+title: Registry Run Key Modification for Persistence
+id: b8c9d0e1-f2a3-4b4c-8d5e-6f7a8b9c0d08
+status: stable
+description: Detects modifications to Registry Run keys that enable programs to execute automatically at user logon. Attackers add entries to HKCU Run keys to maintain persistence across system reboots and avoid detection by security tools.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1547/001/
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  keywords:
+    - "T1547.001-runkey"
+    - "HKCU Run"
+falsepositives:
+  - Legitimate software installation adding autorun registry entries
+  - User-configured startup programs for convenience and workflow
+level: high

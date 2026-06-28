@@ -1,0 +1,3 @@
+2026-06-28 09:45:33 DEFENSE_EVASION Sysmon EventID=13 Registry modified: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\DisableRealtimeMonitoring = 1 by user=admin T1562.001-defender
+2026-06-28 09:45:33 DEFENSE_EVASION EventLog EventID=5007 Windows Defender real-time monitoring disabled via group policy
+2026-06-28 09:45:34 DEFENSE_EVASION EventLog EventID=5004 Windows Defender signature update blocked

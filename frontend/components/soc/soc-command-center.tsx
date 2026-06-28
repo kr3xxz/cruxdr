@@ -1,15 +1,8 @@
 "use client";
 
-<<<<<<< HEAD
-import { useState } from "react";
-import { motion } from "framer-motion";
-=======
 import { useState, useCallback } from "react";
-
 import { motion } from "framer-motion";
-
 import { useEventStore } from "@/store/live-events";
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
 import { useSecurityStore } from "@/store/security-store";
 
 interface AttackMeta {
@@ -76,12 +69,6 @@ export function SOCCommandCenter() {
   const clearEvents = useEventStore((state) => state.clearEvents);
   const sourceIP = "192.168.1.100";
 
-<<<<<<< HEAD
-  const blockedIPs =
-    useSecurityStore(
-      (state) => state.blockedIPs
-    );
-=======
   const addLog = useCallback((msg: string) => {
     setLogs((prev) => [msg, ...prev].slice(0, 100));
   }, []);
@@ -95,7 +82,6 @@ export function SOCCommandCenter() {
     await new Promise((r) => setTimeout(r, delays[0]));
     setPipelineStage("simulating");
     addLog(`[${new Date().toLocaleTimeString()}] [SIMULATE] Generating ${logCount} realistic log events (process, network, file)`);
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
 
     await new Promise((r) => setTimeout(r, delays[1]));
     setPipelineStage("kafka");
@@ -115,12 +101,6 @@ export function SOCCommandCenter() {
     setPipelineStage("idle");
   }, [addLog]);
 
-<<<<<<< HEAD
-        setLogs((prev) => [
-          `[ATTACK BLOCKED] ${sourceIP} denied by SOAR policy`,
-          ...prev,
-        ]);
-=======
   const launchAttack = async (attack: string) => {
     if (blockedIPs.includes(sourceIP)) {
       addLog(`[${new Date().toLocaleTimeString()}] [BLOCKED] ${sourceIP} denied by SOAR policy — IP on deny list`);
@@ -128,12 +108,11 @@ export function SOCCommandCenter() {
     }
 
     if (activeAttack) {
-      addLog(`[${new Date().toLocaleTimeString()}] [BUSY] Previous attack仍在处理中。请等待完成`);
+      addLog(`[${new Date().toLocaleTimeString()}] [BUSY] Previous attack仍然在处理中。请等待完成`);
       return;
     }
 
     setActiveAttack(attack);
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
 
     try {
       addLog(`[${new Date().toLocaleTimeString()}] [LAUNCH] POST http://localhost:8010/${attack}`);
@@ -157,43 +136,6 @@ export function SOCCommandCenter() {
     clearEvents?.();
     addBlockedIP(sourceIP);
 
-<<<<<<< HEAD
-        window.dispatchEvent(
-          new Event("logs-updated")
-        );
-
-      } catch (err) {
-
-        console.error(err);
-      }
-
-      setLogs((prev) => [
-
-        `[ATTACK LAUNCHED] ${attack}`,
-
-        ...prev,
-      ]);
-    };
-
-  const executeResponse =
-    async (
-      action: string
-    ) => {
-
-      addBlockedIP(
-        sourceIP
-      );
-
-      setLogs((prev) => [
-
-        `[SOAR ACTION] ${action}`,
-
-        `[IP BLOCKED] ${sourceIP} added to deny list`,
-
-        ...prev,
-      ]);
-    };
-=======
     const actionLabels: Record<string, string> = {
       "block-ip": "Block IP — 192.168.1.100 added to deny list",
       "isolate-host": "Isolate Host — FINANCE-PC-01 quarantined from network",
@@ -203,10 +145,9 @@ export function SOCCommandCenter() {
     addLog(`[${new Date().toLocaleTimeString()}] [SOAR] ${actionLabels[action] || action}`);
     addLog(`[${new Date().toLocaleTimeString()}] [MITIGATED] Active threats neutralized`);
   };
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950/80">
+    <div className="glass-panel rounded-xl">
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
@@ -222,91 +163,12 @@ export function SOCCommandCenter() {
           </div>
         </div>
 
-<<<<<<< HEAD
-        <div>
-
-          <h3 className="
-            text-red-400
-            text-2xl
-            font-bold
-            mb-6
-          ">
-            SOAR Response Actions
-          </h3>
-
-          <div className="
-            grid
-            gap-4
-          ">
-
-            <button
-              onClick={() =>
-                executeResponse(
-                  "block-ip"
-                )
-              }
-              className="
-                bg-zinc-900
-                border
-                border-slate-700/30
-                hover:border-slate-700
-                rounded-xl
-                p-5
-                text-white
-                font-bold
-              "
-            >
-              Block IP
-            </button>
-
-            <button
-              onClick={() =>
-                executeResponse(
-                  "isolate-host"
-                )
-              }
-              className="
-                bg-zinc-900
-                border
-                border-slate-700/30
-                hover:border-slate-700
-                rounded-xl
-                p-5
-                text-white
-                font-bold
-              "
-            >
-              Isolate Host
-            </button>
-
-            <button
-              onClick={() =>
-                executeResponse(
-                  "disable-user"
-                )
-              }
-              className="
-                bg-zinc-900
-                border
-                border-slate-700/30
-                hover:border-slate-700
-                rounded-xl
-                p-5
-                text-white
-                font-bold
-              "
-            >
-              Disable User
-            </button>
-
-=======
         {activeAttack && (
           <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-950/30 px-3 py-1.5">
             <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
             <span className="text-xs font-mono text-amber-400 uppercase tracking-wider">
               {attacks[activeAttack]?.label} in progress
             </span>
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
           </div>
         )}
       </div>
@@ -341,7 +203,7 @@ export function SOCCommandCenter() {
                         initial={{ width: 0 }}
                         animate={{ width: isActive ? "100%" : "0%" }}
                         transition={{ duration: 0.4, ease: "easeOut" }}
-                        className={`absolute inset-y-0 left-0 rounded-full ${stageColors[stage.key as PipelineStage]}`}
+                        className={`absolute inset-y-0 left-0 rounded-full ${stageColors[stage.key]}`}
                       />
                     </div>
                     <motion.span
@@ -467,8 +329,6 @@ export function SOCCommandCenter() {
 
         </div>
 
-<<<<<<< HEAD
-=======
         {/* ── Live SOC Activity ── */}
         <div className="mt-5">
           <div className="flex items-center justify-between mb-3">
@@ -524,7 +384,6 @@ export function SOCCommandCenter() {
           </div>
         </div>
 
->>>>>>> 1f84238 (redesign SOC interface, fix sigma→correlation pipeline, enhance UEBA analytics & MITRE heatmap)
       </div>
     </div>
   );

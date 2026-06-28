@@ -36,7 +36,7 @@ export function LiveAttackGraph() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-6">
+    <div className="glass-panel rounded-xl p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-950/60 border border-cyan-500/30">

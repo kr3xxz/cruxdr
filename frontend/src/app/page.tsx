@@ -76,9 +76,9 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
 };
 
 const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" as const } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.15, ease: "easeIn" as const } },
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] } },
 };
 
 export default function DashboardPage() {
@@ -197,16 +197,16 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto relative z-[1]">
         {/* Top Header Bar */}
         <div className="sticky top-0 z-20 flex items-center justify-between header-glass px-6 py-3 relative">
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/15 to-transparent" />
           <div className="flex items-center gap-3">
             {tabIcon && (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900/80 border border-zinc-800">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/40 shadow-sm">
                 {tabIcon}
               </div>
             )}
             <div>
               <h1 className="text-base font-bold text-foreground tracking-tight">{meta.title}</h1>
-              <p className="text-[11px] text-zinc-500 font-mono">{meta.subtitle}</p>
+              <p className="text-[11px] text-muted-foreground/60 font-mono tracking-wide">{meta.subtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -214,7 +214,7 @@ export default function DashboardPage() {
               <>
                 <button
                   onClick={clearAll}
-                  className="flex items-center gap-1.5 rounded-md border border-red-900/30 bg-red-950/20 px-3 py-1.5 text-xs text-red-400 hover:bg-red-950/40 transition-colors"
+                  className="flex items-center gap-1.5 rounded-md border border-red-900/20 bg-red-950/15 px-3 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-950/30 hover:border-red-800/30 transition-all duration-200"
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -222,22 +222,25 @@ export default function DashboardPage() {
                   Clear All
                 </button>
                 <div className="flex items-center gap-2 text-xs font-mono">
-                  <span className="flex items-center gap-1 text-zinc-500">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="flex items-center gap-1.5 text-zinc-500">
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
                     Live
                   </span>
                   <span className="text-zinc-700">|</span>
-                  <span className="text-zinc-500">{storeCount} events</span>
+                  <span className="text-zinc-500 tabular-nums">{storeCount} events</span>
                   {numCritical > 0 && (
                     <>
                       <span className="text-zinc-700">|</span>
-                      <span className="text-red-400">{numCritical} critical</span>
+                      <span className="text-red-400 tabular-nums">{numCritical} critical</span>
                     </>
                   )}
                   {numHigh > 0 && (
                     <>
                       <span className="text-zinc-700">|</span>
-                      <span className="text-orange-400">{numHigh} high</span>
+                      <span className="text-orange-400 tabular-nums">{numHigh} high</span>
                     </>
                   )}
                 </div>
@@ -247,7 +250,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 relative z-[1]">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -265,7 +268,7 @@ export default function DashboardPage() {
                     <LiveAttackGraph />
                   </div>
                   <div className="glass-panel rounded-xl overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+                    <div className="flex items-center justify-between border-b border-zinc-800/60 px-6 py-4">
                       <SectionHeader
                         title="Telemetry Analysis"
                         subtitle="Upload log files for analysis"
@@ -276,36 +279,46 @@ export default function DashboardPage() {
                         }
                       />
                       <div className="flex items-center gap-3">
-                        <label className="cursor-pointer rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-300 transition-colors">
+                        <label className="cursor-pointer rounded-md border border-zinc-700/40 bg-zinc-900/50 px-3 py-1.5 text-xs text-zinc-400 hover:border-zinc-600/60 hover:text-zinc-300 hover:bg-zinc-800/50 transition-all duration-200">
                           Upload File
                           <input type="file" onChange={uploadFile} className="hidden" />
                         </label>
                         {uploadStatus && (
-                          <span className={`text-xs ${uploadStatus.includes("failed") ? "text-red-400" : "text-emerald-400"}`}>
+                          <span className={`text-xs font-mono ${uploadStatus.includes("failed") ? "text-red-400" : "text-emerald-400"}`}>
                             {uploadStatus}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="p-6">
-                      {/* Live Alerts list */}
                       <div className="mb-6">
-                        <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">
+                        <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-[0.12em] mb-3">
                           Live Alerts ({liveAlerts.length})
                         </h3>
-                        <div className="max-h-[400px] overflow-y-auto space-y-2">
+                        <div className="max-h-[400px] overflow-y-auto space-y-2 custom-scrollbar">
                           {liveAlerts.length === 0 && (
-                            <p className="text-sm text-zinc-600 text-center py-8">No alerts yet. Launch an attack or upload telemetry.</p>
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                              <svg className="h-8 w-8 text-zinc-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                              </svg>
+                              <p className="text-sm text-zinc-600 font-mono">No alerts yet. Launch an attack or upload telemetry.</p>
+                            </div>
                           )}
                           {liveAlerts.map((alert: any, idx: number) => (
-                            <div key={idx} className="flex items-start gap-3 rounded-lg border border-red-900/20 bg-red-950/20 p-4">
+                            <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.03 }}
+                              className="flex items-start gap-3 rounded-lg border border-red-900/15 bg-red-950/15 p-4 hover:border-red-800/25 hover:bg-red-950/25 transition-all duration-200"
+                            >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="text-sm font-bold text-white">
                                     {(alert.attack_type || "unknown").replace(/_/g, " ").toUpperCase()}
                                   </span>
                                   {alert.mitre_technique && (
-                                    <span className="text-[10px] text-violet-400 font-mono">{alert.mitre_technique}</span>
+                                    <span className="text-[10px] text-violet-400/80 font-mono">{alert.mitre_technique}</span>
                                   )}
                                 </div>
                                 <p className="text-xs text-zinc-400">{alert.message}</p>
@@ -314,7 +327,7 @@ export default function DashboardPage() {
                                 </p>
                               </div>
                               <SeverityBadge severity={alert.severity} />
-                            </div>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
@@ -360,7 +373,7 @@ export default function DashboardPage() {
                         </svg>
                       }
                     />
-                    <div className="border-t border-zinc-800/60 my-6" />
+                    <div className="border-t border-zinc-800/40 my-6" />
                     <SigmaUpload />
                   </div>
                 </div>

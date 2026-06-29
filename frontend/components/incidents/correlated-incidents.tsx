@@ -97,7 +97,7 @@ export function CorrelatedIncidents() {
                   const isSelected = selectedId === (incident.id || incident.title);
                   return (
                     <motion.button
-                      key={incident.id || incident.title || idx}
+                      key={`${incident.id || incident.title || "incident"}-${idx}`}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.03 }}

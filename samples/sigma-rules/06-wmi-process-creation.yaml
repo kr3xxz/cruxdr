@@ -1,7 +1,7 @@
 title: WMI Process Creation via Win32_Process
 id: f6a7b8c9-d0e1-4f2a-8b3c-4d5e6f7a8b06
 status: stable
-description: Detects the creation of processes via Windows Management Instrumentation using the Win32_Process class. Attackers abuse WMI for remote execution and lateral movement without requiring traditional remote access tools or software.
+description: Detects remote process creation via WMI Win32_Process class method invocation. Attackers use WMI for stealthy execution and lateral movement without deploying traditional remote access tools.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,14 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  keywords:
-    - "T1059.003-wmi"
-    - "Win32_Process"
+  selection:
+    event_type: "execution"
+    action: "remote_process_creation"
+    process.name: "wmic.exe"
+  condition: selection
 falsepositives:
-  - Legitimate WMI-based system management and monitoring solutions
-  - Enterprise endpoint management software scheduled operations
+  - Enterprise endpoint management solutions using WMI for inventory
+  - IT automation scripts for legitimate remote administration
 level: high
+mitre:
+  technique: T1059.003

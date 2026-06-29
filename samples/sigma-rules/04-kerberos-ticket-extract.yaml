@@ -1,7 +1,7 @@
 title: Kerberos Ticket Extraction from LSASS Memory
 id: d4e5f6a7-b8c9-4d0e-8f1a-2b3c4d5e6f04
 status: stable
-description: Detects attempts to extract Kerberos ticket grant tickets and service tickets from LSASS process memory. Attackers extract Kerberos tickets to perform pass-the-ticket attacks and maintain persistent access to network resources.
+description: Detects extraction of Kerberos ticket grant tickets from LSASS memory or export to file. Attackers extract Kerberos tickets for pass-the-ticket attacks to impersonate users across the domain.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,13 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  keywords:
-    - "T1003.005-kerberos"
-    - "ticket extract"
+  selection:
+    event_type: "credential_access"
+    file.name: "*.kirbi"
+  condition: selection
 falsepositives:
-  - Legitimate Kerberos troubleshooting by domain administrators
-  - Security incident response forensic collection procedures
-level: critical
+  - Forensic investigators collecting Kerberos tickets for incident response
+  - Domain admin troubleshooting Kerberos authentication issues
+level: high
+mitre:
+  technique: T1003.005

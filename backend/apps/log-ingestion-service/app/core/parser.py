@@ -1,150 +1,25 @@
-import re
+import json
 
 
-def _extract(pattern: str, text: str, default: str = "") -> str:
-    m = re.search(pattern, text, re.I)
-    return m.group(1) if m else default
-
-
-def _has(text: str, *keywords: str) -> bool:
-    lower = text.lower()
-    return all(kw.lower() in lower for kw in keywords)
-
-
-TACTIC_MAP = {
-    "CREDENTIAL_ACCESS": "credential_access",
-    "EXECUTION": "execution",
-    "PERSISTENCE": "persistence",
-    "PRIVILEGE_ESCALATION": "privilege_escalation",
-    "DEFENSE_EVASION": "defense_evasion",
-    "LATERAL_MOVEMENT": "lateral_movement",
-    "EXFILTRATION": "data_exfiltration",
+ECS_EVENT_TYPE_MAP = {
+    "credential_access": "credential_access",
+    "execution": "execution",
+    "persistence": "persistence",
+    "privilege_escalation": "privilege_escalation",
+    "defense_evasion": "defense_evasion",
+    "lateral_movement": "lateral_movement",
+    "exfiltration": "data_exfiltration",
 }
 
-
-PARSERS = [
-
-    {
-        "type": "tactic_tag",
-        "check": lambda line: any(t in line.upper() for t in TACTIC_MAP),
-        "extract": lambda line: {
-            "event_type": next(
-                TACTIC_MAP[t] for t in TACTIC_MAP if t in line.upper()
-            ),
-            "host": (
-                _extract(r"(?:on\s+host\s+|from\s+host\s+)(\S+)", line)
-                or _extract(r"from\s+(\w+(?:-\w+)*)\s*\(", line)
-            ),
-            "username": (
-                _extract(r"(?:^|[\s/])user[=:]\s*(NT\s+AUTHORITY\\\S+)", line)
-                or _extract(r"(?:^|[\s/])user[=:]\s*(\S+)", line)
-                or _extract(r"subject:\s*(\S+)", line)
-                or _extract(r"by\s+([A-Za-z]+\\.\S+)", line)
-                or _extract(r"Users\\(\S+?)\\", line)
-            ),
-            "source_ip": (
-                _extract(r"from\s+IP\s+(\d+\.\d+\.\d+\.\d+)", line)
-                or _extract(r"from\s+(\d+\.\d+\.\d+\.\d+)", line)
-                or _extract(r"\(\s*(\d+\.\d+\.\d+\.\d+)\s*\)", line)
-            ),
-            "raw": line,
-        },
-        "stop": True,
-    },
-
-    {
-        "type": "failed_login",
-        "check": lambda line: "4625" in line or _has(line, "failed logon"),
-        "extract": lambda line: {
-            "username": (
-                _extract(r"user[=:](\S+)", line)
-                or _extract(r"user\s+(\S+)", line)
-                or "unknown"
-            ),
-            "source_ip": _extract(r"from\s+IP\s+(\d+\.\d+\.\d+\.\d+)", line)
-                        or _extract(r"from\s+([0-9.]+)", line, "0.0.0.0"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "lateral_movement",
-        "check": lambda line: "4624" in line or "7045" in line or _has(line, "service creation") or _has(line, "psexec"),
-        "extract": lambda line: {
-            "username": (
-                _extract(r"by\s+(\S+)", line)
-                or _extract(r"user[=:](\S+)", line)
-                or _extract(r"user\s+(\S+)", line)
-                or "unknown"
-            ),
-            "host": _extract(r"on\s+host\s+(\S+)", line)
-                  or _extract(r"on\s+(\S+)", line, "unknown"),
-            "source_ip": _extract(r"from\s+(\d+\.\d+\.\d+\.\d+)", line),
-            "raw": line,
-        },
-    },
-    {
-        "type": "ransomware",
-        "check": lambda line: _has(line, ".locker", "encrypted"),
-        "extract": lambda line: {
-            "host": _extract(r"on\s+(\S+)", line, "unknown"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "phishing",
-        "check": lambda line: _has(line, "phishing campaign", "malicious url"),
-        "extract": lambda line: {
-            "username": _extract(r"user\s+(\S+)", line, "unknown"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "data_exfiltration",
-        "check": lambda line: _has(line, "large data transfer", "external ip"),
-        "extract": lambda line: {
-            "host": _extract(r"from\s+(\S+)", line, "unknown"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "privilege_escalation",
-        "check": lambda line: _has(line, "4672", "special privilege"),
-        "extract": lambda line: {
-            "username": _extract(r"user\s+(\S+)", line, "unknown"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "credential_access",
-        "check": lambda line: _has(line, "lsass", "dump"),
-        "extract": lambda line: {
-            "host": _extract(r"(?:on\s+host\s+|from\s+host\s+)(\S+)", line),
-            "username": (
-                _extract(r"user[=:](\S+)", line)
-                or _extract(r"by\s+(\S+)", line)
-            ),
-            "source_ip": _extract(r"from\s+IP\s+(\d+\.\d+\.\d+\.\d+)", line),
-            "raw": line,
-        },
-    },
-
-    {
-        "type": "failed_login",
-        "check": lambda line: bool(re.search(r"Failed password for (.+?) from ([0-9.]+)", line)),
-        "extract": lambda line: {
-            "username": _extract(r"Failed password for (.+?) from ([0-9.]+)", line, "unknown"),
-            "source_ip": _extract(r"from\s+([0-9.]+)", line, "0.0.0.0"),
-            "raw": line,
-        },
-    },
-    {
-        "type": "successful_login",
-        "check": lambda line: "Accepted password" in line,
-        "extract": lambda line: {
-            "raw": line,
-        },
-    },
-]
+TACTIC_CATEGORY_MAP = {
+    "credential_access": "Credential Access",
+    "execution": "Execution",
+    "persistence": "Persistence",
+    "privilege_escalation": "Privilege Escalation",
+    "defense_evasion": "Defense Evasion",
+    "lateral_movement": "Lateral Movement",
+    "exfiltration": "Exfiltration",
+}
 
 
 def parse_logs(raw_logs: str):
@@ -155,14 +30,62 @@ def parse_logs(raw_logs: str):
         if not line:
             continue
 
-        for parser in PARSERS:
-            if parser["check"](line):
-                extracted = parser["extract"](line)
-                event = {
-                    "event_type": extracted.pop("event_type", parser["type"]),
-                }
-                event.update(extracted)
-                events.append(event)
-                break
+        if line.startswith("{"):
+            try:
+                parsed = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            raw_str = parsed.get("raw", line)
+            event_type = parsed.get("event_type", "")
+            tactic = parsed.get("threat", {}).get("tactic", "")
+
+            event = {
+                "event_type": ECS_EVENT_TYPE_MAP.get(event_type, event_type),
+                "tactic": tactic or TACTIC_CATEGORY_MAP.get(event_type, ""),
+                "technique_id": parsed.get("threat", {}).get("technique_id", ""),
+                "technique_name": parsed.get("threat", {}).get("technique_name", ""),
+                "attack_type": parsed.get("attack_type", ""),
+                "mitre_technique": parsed.get("mitre_technique", ""),
+                "severity_score": parsed.get("severity", 0),
+                "confidence": parsed.get("confidence", 0),
+                "category": parsed.get("category", ""),
+                "action": parsed.get("action", ""),
+                "process_name": parsed.get("process", {}).get("name", ""),
+                "process_path": parsed.get("process", {}).get("path", ""),
+                "process_pid": parsed.get("process", {}).get("pid", 0),
+                "parent_process_name": parsed.get("parent", {}).get("name", ""),
+                "parent_process_path": parsed.get("parent", {}).get("path", ""),
+                "target_process_name": parsed.get("target", {}).get("name", ""),
+                "target_process_path": parsed.get("target", {}).get("path", ""),
+                "target_process_pid": parsed.get("target", {}).get("pid", 0),
+                "username": parsed.get("user", {}).get("name", ""),
+                "user_domain": parsed.get("user", {}).get("domain", ""),
+                "host": parsed.get("host", {}).get("name", ""),
+                "host_ip": parsed.get("host", {}).get("ip", ""),
+                "source_ip": (
+                    parsed.get("network", {}).get("src_ip", "")
+                    or parsed.get("source", {}).get("ip", "")
+                ),
+                "dest_ip": (
+                    parsed.get("network", {}).get("dest_ip", "")
+                    or parsed.get("destination", {}).get("ip", "")
+                ),
+                "dest_port": (
+                    parsed.get("network", {}).get("dest_port", 0)
+                    or parsed.get("destination", {}).get("port", 0)
+                ),
+                "registry_path": parsed.get("registry", {}).get("path", ""),
+                "registry_value": parsed.get("registry", {}).get("value", ""),
+                "registry_data": parsed.get("registry", {}).get("data", ""),
+                "file_name": parsed.get("file", {}).get("name", ""),
+                "file_path": parsed.get("file", {}).get("path", ""),
+                "dns_query": parsed.get("dns", {}).get("query", ""),
+                "command_line": parsed.get("command_line", "") or parsed.get("process", {}).get("command_line", ""),
+                "message": parsed.get("message", ""),
+                "timestamp": parsed.get("ts", ""),
+                "raw": raw_str,
+            }
+            events.append(event)
 
     return events

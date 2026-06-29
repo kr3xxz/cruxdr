@@ -1,10 +1,13 @@
 import time
 from datetime import datetime
 
+from shared.seed_data import lookup_user, lookup_host
+
 from app.store.users import (
     user_profiles,
     user_risks,
     anomalies,
+    user_identity,
 )
 
 from app.core.risk_engine import (
@@ -37,14 +40,16 @@ class UEBAEngine:
             or "unknown"
         )
 
-        now = time.time()
-        event["_ts"] = now
-
         if user not in user_profiles:
             user_profiles[user] = []
 
         user_profiles[user].append(event)
         user_profiles[user] = user_profiles[user][-50:]
+
+        if user not in user_identity and user in lookup_user:
+            user_identity[user] = dict(lookup_user[user])
+
+        identity = user_identity.get(user, {})
 
         recent = user_profiles[user]
 
@@ -86,6 +91,10 @@ class UEBAEngine:
             ],
             "timestamp": timestamp,
         }
+        if identity:
+            risk_entry["department"] = identity.get("department", "")
+            risk_entry["role"] = identity.get("role", "")
+            risk_entry["domain"] = identity.get("domain", "")
 
         user_risks.insert(0, risk_entry)
         del user_risks[100:]
@@ -100,6 +109,8 @@ class UEBAEngine:
                 ),
                 "timestamp": timestamp,
             }
+            if identity:
+                anomaly_entry["department"] = identity.get("department", "")
             anomalies.insert(0, anomaly_entry)
 
         del anomalies[100:]

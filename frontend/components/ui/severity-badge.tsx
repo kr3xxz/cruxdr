@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 
 interface SeverityBadgeProps {
-  severity: string;
+  severity: string | number;
   size?: "sm" | "md" | "lg";
   showDot?: boolean;
   className?: string;
@@ -25,8 +25,14 @@ const sizeClasses = {
   lg: "px-3 py-1 text-sm",
 };
 
+function normalizeSeverity(s: any): string {
+  if (typeof s === "number") return s >= 70 ? "critical" : s >= 40 ? "high" : s >= 20 ? "medium" : "low";
+  return (s || "medium").toString().toLowerCase();
+}
+
 export function SeverityBadge({ severity, size = "sm", showDot = true, className }: SeverityBadgeProps) {
-  const config = severityConfig[severity?.toLowerCase()] || severityConfig.medium;
+  const sev = normalizeSeverity(severity);
+  const config = severityConfig[sev] || severityConfig.medium;
   return (
     <span className={cn(
       "inline-flex items-center gap-1.5 rounded-md border font-mono font-semibold uppercase tracking-wider",
@@ -38,15 +44,16 @@ export function SeverityBadge({ severity, size = "sm", showDot = true, className
         <span className={cn(
           "h-1.5 w-1.5 rounded-full",
           config.dot,
-          severity === "critical" && "animate-pulse"
+          sev === "critical" && "animate-pulse"
         )} />
       )}
-      {severity}
+      {sev}
     </span>
   );
 }
 
-export function SeverityDot({ severity, className }: { severity: string; className?: string }) {
+export function SeverityDot({ severity, className }: { severity: string | number; className?: string }) {
+  const sev = normalizeSeverity(severity);
   const colors: Record<string, string> = {
     critical: "bg-red-500",
     high: "bg-orange-500",
@@ -57,14 +64,15 @@ export function SeverityDot({ severity, className }: { severity: string; classNa
   return (
     <span className={cn(
       "h-2 w-2 rounded-full",
-      colors[severity?.toLowerCase()] || "bg-zinc-500",
-      severity === "critical" && "animate-pulse",
+      colors[sev] || "bg-zinc-500",
+      sev === "critical" && "animate-pulse",
       className
     )} />
   );
 }
 
-export function getSeverityColor(severity: string): string {
+export function getSeverityColor(severity: string | number): string {
+  const sev = normalizeSeverity(severity);
   const map: Record<string, string> = {
     critical: "#ef4444",
     high: "#f97316",
@@ -72,5 +80,5 @@ export function getSeverityColor(severity: string): string {
     low: "#3b82f6",
     info: "#a1a1aa",
   };
-  return map[severity?.toLowerCase()] || map.medium;
+  return map[sev] || map.medium;
 }

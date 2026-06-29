@@ -12,12 +12,12 @@ export default function LogExplorer() {
   const fetchLogs = async () => {
     let url = "http://localhost:8080/logs";
     if (query.trim()) {
-      url = `http://localhost:8080/search?q=${query}`;
+      url = `http://localhost:8080/search?q=${encodeURIComponent(query)}`;
     }
     try {
       const response = await fetch(url);
       const data = await response.json();
-      setLogs(data.reverse());
+      setLogs(Array.isArray(data) ? [...data].reverse() : []);
     } catch (err) {
       console.error(err);
     }
@@ -67,7 +67,8 @@ export default function LogExplorer() {
             </div>
           ) : (
             logs.map((log, idx) => {
-              const isCritical = log.severity === "critical" || log.severity === "high";
+              const norm = (s: any) => typeof s === "number" ? (s >= 70 ? "critical" : s >= 40 ? "high" : s >= 20 ? "medium" : "low") : (s || "").toString().toLowerCase();
+              const isCritical = norm(log.severity) === "critical" || norm(log.severity) === "high";
               return (
                 <motion.div
                   key={idx}
@@ -79,7 +80,7 @@ export default function LogExplorer() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-bold font-mono uppercase tracking-wider ${isCritical ? "text-red-400" : "text-cyan-400"}`}>
-                        {log.event_type}
+                        {log.attack_type || log.event_type}
                       </span>
                       {log.severity && (
                         <span className={`text-[10px] font-mono ${isCritical ? "text-red-500" : "text-zinc-600"}`}>
@@ -91,9 +92,9 @@ export default function LogExplorer() {
                       <span className="text-[10px] text-zinc-500 font-mono shrink-0">{log.source_ip}</span>
                     )}
                   </div>
-                  {log.username && (
+                  {(log.username || log.user) && (
                     <div className="text-xs text-zinc-300 mb-2">
-                      User: <span className="font-mono text-zinc-400">{log.username}</span>
+                      User: <span className="font-mono text-zinc-400">{log.username || log.user}</span>
                     </div>
                   )}
                   <div className="text-[11px] text-zinc-600 break-all font-mono leading-relaxed">

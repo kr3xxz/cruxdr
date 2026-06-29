@@ -1,3 +1,1 @@
-2026-06-28 10:00:01 LATERAL_MOVEMENT EventLog EventID=7045 Service created: PsExecSvc image_path=C:\Windows\PSEXESVC.exe on host SRV-WEB T1021.002-psexec
-2026-06-28 10:00:01 LATERAL_MOVEMENT Sysmon EventID=1 Process: C:\Windows\PSEXESVC.exe started by domain\admin from 10.0.0.55
-2026-06-28 10:00:02 LATERAL_MOVEMENT Sysmon EventID=3 Network connection: 10.0.0.55:445 to 10.0.1.50:445 (SMB)
+{"ts":"2026-06-28T10:00:01Z","event_type":"lateral_movement","category":"process","action":"service_creation","process":{"name":"PSEXESVC.exe","path":"C:\\Windows\\PSEXESVC.exe"},"user":{"name":"domain\\admin","domain":"CORP"},"host":{"name":"SRV-WEB","ip":"10.0.1.25"},"source":{"ip":"10.0.0.55"},"destination":{"ip":"10.0.1.25","port":445},"threat":{"technique_id":"T1021.002","technique_name":"PsExec Service Lateral Movement","tactic":"Lateral Movement"},"severity":85,"confidence":90,"message":"PsExec service installed on SRV-WEB from 10.0.0.55 by domain\\admin"}

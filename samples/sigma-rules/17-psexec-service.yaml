@@ -1,7 +1,7 @@
 title: PsExec Service Creation for Lateral Movement
 id: e7f8a9b0-c1d2-4e3f-8a4b-5c6d7e8f9a17
 status: stable
-description: Detects the creation of PsExec services on remote systems which indicates lateral movement via the PsExec administration tool. Attackers commonly abuse PsExec to execute commands remotely and move laterally across network segments after initial compromise.
+description: Detects PsExec service creation indicating lateral movement via Sysinternals PsExec tool. Attackers abuse PsExec to execute commands on remote systems after gaining initial foothold.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -10,13 +10,17 @@ tags:
   - attack.lateral-movement
   - attack.t1021.002
 logsource:
-  category: process_creation
+  category: service_creation
   product: windows
 detection:
-  keywords:
-    - "T1021.002-psexec"
-    - "PsExec service"
+  selection:
+    event_type: "lateral_movement"
+    action: "service_creation"
+    process.name: "PSEXESVC.exe"
+  condition: selection
 falsepositives:
-  - Legitimate remote administration using PsExec by IT support staff
-  - Automated software deployment tools that rely on PsExec for execution
+  - IT support staff using PsExec for approved remote administration
+  - Automated deployment tools using PsExec for software distribution
 level: high
+mitre:
+  technique: T1021.002

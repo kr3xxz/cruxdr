@@ -282,6 +282,9 @@ services:
     depends_on:
       - kafka
 
+    volumes:
+      - ./backend/shared:/app/shared
+
     networks:
       - crux-network
 
@@ -303,6 +306,8 @@ services:
       - .env
     depends_on:
       - kafka
+    volumes:
+      - ./backend/shared:/app/shared
     networks:
       - crux-network
     restart: unless-stopped
@@ -322,6 +327,9 @@ services:
 
     depends_on:
       - kafka
+
+    volumes:
+      - ./backend/shared:/app/shared
 
     networks:
       - crux-network

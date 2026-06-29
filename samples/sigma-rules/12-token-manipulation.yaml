@@ -1,7 +1,7 @@
 title: Token Manipulation via SeDebugPrivilege Enable
 id: f2a3b4c5-d6e7-4f8a-8b9c-0d1e2f3a4b12
 status: stable
-description: Detects processes enabling the SeDebugPrivilege token privilege which grants access to debug and manipulate other processes. Attackers enable this privilege to perform token theft and impersonation for privilege escalation against higher-integrity processes.
+description: Detects processes enabling SeDebugPrivilege to manipulate security tokens. Attackers enable this privilege to perform token theft and impersonation for privilege escalation.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,16 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  keywords:
-    - "T1134.001-token"
-    - "SeDebugPrivilege"
+  selection1:
+    event_type: "privilege_escalation"
+    action: "privilege_assignment"
+  selection2:
+    event_type: "privilege_escalation"
+    process.name: "mimikatz.exe"
+  condition: selection1 or selection2
 falsepositives:
-  - Legitimate system diagnostics and performance monitoring tools
-  - Debugging tools used by software developers for troubleshooting
+  - Legitimate debugging tools used by developers for software diagnostics
+  - Performance monitoring tools that require process inspection
 level: high
+mitre:
+  technique: T1134.001

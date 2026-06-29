@@ -51,27 +51,41 @@ export function LiveAttackFeed() {
               <div className="flex items-center justify-between">
 
                 <p className="text-red-400 font-semibold uppercase">
-                  {event.attack_type}
+                  {event.attack_type?.replace(/_/g, " ")}
                 </p>
 
-                <div className="
-                  w-3
-                  h-3
-                  rounded-full
-                  bg-slate-800
-                  animate-pulse
-                " />
+                <div className="flex items-center gap-2">
+                  {event.count > 1 && (
+                    <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
+                      {event.count} events
+                    </span>
+                  )}
+                  <div className="
+                    w-3
+                    h-3
+                    rounded-full
+                    bg-slate-800
+                    animate-pulse
+                  " />
+                </div>
               </div>
 
               <p className="text-zinc-300 mt-2">
                 {event.message}
               </p>
 
-              <p className="text-zinc-500 text-sm mt-2">
-                MITRE:
-                {" "}
-                {event.mitre_technique}
-              </p>
+              <div className="flex items-center gap-3 mt-2">
+                {event.mitre_technique && (
+                  <span className="text-violet-400 text-sm font-mono">
+                    MITRE: {event.mitre_technique}
+                  </span>
+                )}
+                {event.tactic && (
+                  <span className="text-zinc-500 text-sm">
+                    {event.tactic}
+                  </span>
+                )}
+              </div>
             </motion.div>
           )
         )}

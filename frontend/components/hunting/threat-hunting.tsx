@@ -27,16 +27,15 @@ export default function ThreatHunting() {
   const [hunting, setHunting] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
 
-  const hunt = async () => {
-    if (!query.trim()) return;
+  const hunt = async (overrideQuery?: string) => {
+    const q = overrideQuery ?? query;
+    if (!q.trim()) return;
     setHunting(true);
-    setHistory((prev) => [query, ...prev].slice(0, 20));
+    setHistory((prev) => [q, ...prev].slice(0, 20));
 
     try {
-      let url = `http://localhost:8080/hunt?q=${encodeURIComponent(query)}`;
-      if (huntType === "ioc") url = `http://localhost:8080/hunt?ioc=${encodeURIComponent(query)}`;
-      else if (huntType === "host") url = `http://localhost:8080/hunt?host=${encodeURIComponent(query)}`;
-      else if (huntType === "user") url = `http://localhost:8080/hunt?user=${encodeURIComponent(query)}`;
+      const prefix = huntType === "ioc" ? "ioc:" : huntType === "host" ? "host:" : huntType === "user" ? "user:" : "";
+      const url = `http://localhost:8080/hunt?q=${encodeURIComponent(prefix + q)}`;
       
       const res = await fetch(url);
       const data = await res.json();
@@ -145,7 +144,7 @@ export default function ThreatHunting() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold font-mono text-cyan-400 uppercase tracking-wider">
-                        {event.event_type || "Event"}
+                        {event.attack_type || event.event_type || "Event"}
                       </span>
                       {event.severity && <SeverityBadge severity={event.severity} />}
                     </div>
@@ -156,7 +155,7 @@ export default function ThreatHunting() {
                     )}
                   </div>
                   <div className="space-y-0.5 text-xs text-zinc-400">
-                    {event.username && <div>User: <span className="font-mono text-zinc-300">{event.username}</span></div>}
+                    {(event.username || event.user) && <div>User: <span className="font-mono text-zinc-300">{event.username || event.user}</span></div>}
                     {event.source_ip && <div>IP: <span className="font-mono text-zinc-300">{event.source_ip}</span></div>}
                     {event.host && <div>Host: <span className="font-mono text-zinc-300">{event.host}</span></div>}
                   </div>
@@ -180,7 +179,7 @@ export default function ThreatHunting() {
                 {history.map((h, i) => (
                   <button
                     key={i}
-                    onClick={() => { setQuery(h); hunt(); }}
+                    onClick={() => { setQuery(h); hunt(h); }}
                     className="w-full text-left rounded-md border border-zinc-800/60 bg-zinc-900/30 px-3 py-2 text-xs text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-300 transition-colors truncate font-mono"
                   >
                     {h}

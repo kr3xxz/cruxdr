@@ -9,6 +9,12 @@ from app.core.processor import (
     UEBAProcessor,
 )
 
+from app.store.users import (
+    user_identity,
+)
+
+from shared.seed_data import USERS
+
 app = FastAPI(
     title="CruXDR UEBA Service"
 )
@@ -33,7 +39,10 @@ async def root():
 
 @app.on_event("startup")
 async def startup():
+    for u in USERS:
+        user_identity[u["username"]] = dict(u)
+    print(f"[UEBA] Seeded {len(USERS)} user identities from enterprise directory", flush=True)
     asyncio.create_task(
         UEBAProcessor.start()
     )
-    print("[UEBA] Processor started")
+    print("[UEBA] Processor started", flush=True)

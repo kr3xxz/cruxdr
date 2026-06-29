@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useEventStore } from "@/store/live-events";
 
+function normalizeSev(s: any): string {
+  if (typeof s === "number") return s >= 70 ? "critical" : s >= 40 ? "high" : s >= 20 ? "medium" : "low";
+  return (s || "medium").toString().toLowerCase();
+}
+
 const severityColor: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   critical: {
     bg: "bg-red-950/40",
@@ -68,13 +73,14 @@ const recommendations: Record<string, { title: string; steps: string[] }> = {
   },
 };
 
-function SeverityBadge({ severity, size = "sm" }: { severity: string; size?: "sm" | "lg" }) {
-  const colors = severityColor[severity] || severityColor.medium;
+function SeverityBadge({ severity, size = "sm" }: { severity: any; size?: "sm" | "lg" }) {
+  const sev = normalizeSev(severity);
+  const colors = severityColor[sev] || severityColor.medium;
   const s = size === "lg" ? "px-4 py-1.5 text-sm" : "px-2.5 py-0.5 text-xs";
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-md ${colors.bg} ${colors.text} ${colors.border} border font-mono font-semibold ${s} uppercase tracking-wider`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${colors.dot} ${severity === "critical" ? "animate-pulse" : ""}`} />
-      {severity}
+      <span className={`h-1.5 w-1.5 rounded-full ${colors.dot} ${sev === "critical" ? "animate-pulse" : ""}`} />
+      {sev}
     </span>
   );
 }
@@ -82,14 +88,14 @@ function SeverityBadge({ severity, size = "sm" }: { severity: string; size?: "sm
 export function AIPanel() {
   const events = useEventStore((state) => state.events);
   const latest = events[0];
-  const severity = latest?.severity || "medium";
+  const severity = normalizeSev(latest?.severity) || "medium";
   const attack = latest?.attack_type || "Suspicious activity";
   const rec = recommendations[severity] || recommendations.medium;
 
   const totalEvents = events.length;
-  const criticalCount = events.filter((e) => e.severity === "critical").length;
-  const highCount = events.filter((e) => e.severity === "high").length;
-  const mediumCount = events.filter((e) => e.severity === "medium").length;
+  const criticalCount = events.filter((e) => normalizeSev(e.severity) === "critical").length;
+  const highCount = events.filter((e) => normalizeSev(e.severity) === "high").length;
+  const mediumCount = events.filter((e) => normalizeSev(e.severity) === "medium").length;
   const colors = severityColor[severity] || severityColor.medium;
 
   return (
@@ -294,7 +300,7 @@ export function AIPanel() {
               const c = severityColor[event.severity] || severityColor.medium;
               return (
                 <motion.div
-                  key={index}
+                  key={event.timestamp ? `${event.timestamp}-${event.attack_type || event.event_type || index}` : `event-${index}`}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
@@ -302,7 +308,7 @@ export function AIPanel() {
                 >
                   {/* Severity indicator */}
                   <div className="flex flex-col items-center gap-1 pt-0.5">
-                    <span className={`h-2 w-2 rounded-full ${c.dot} ${event.severity === "critical" ? "animate-pulse" : ""}`} />
+                    <span className={`h-2 w-2 rounded-full ${c.dot} ${normalizeSev(event.severity) === "critical" ? "animate-pulse" : ""}`} />
                   </div>
 
                   {/* Event details */}

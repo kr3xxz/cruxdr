@@ -1,0 +1,27 @@
+title: Malicious File Execution Detection
+id: f7a8b9c0-d1e2-4f3a-8b4c-5d6e7f8a9b21
+status: stable
+description: Detects executable files (.exe) executed from user-writable directories (Downloads, Temp, AppData, Desktop, Roaming) — common malware delivery paths used by phishing, drive-by downloads, and trojans.
+author: CruXDR SOC Team
+date: 2026-06-29
+references:
+  - https://attack.mitre.org/techniques/T1204/002/
+tags:
+  - attack.execution
+  - attack.t1204.002
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    event_type: "execution"
+    process.name: "endswith|.exe"
+    process.path: "contains|Downloads|Temp|AppData|Desktop|Roaming"
+  condition: selection
+falsepositives:
+  - Legitimate software installers run from Downloads folder by users
+  - IT-sanctioned executables staged in Temp during deployment
+level: high
+mitre:
+  technique: T1204.002
+  tactic: Execution

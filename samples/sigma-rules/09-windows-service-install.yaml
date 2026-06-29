@@ -1,7 +1,7 @@
-title: Malicious Windows Service Installation via sc.exe
+title: Windows Service Installation via sc.exe
 id: c9d0e1f2-a3b4-4c5d-8e6f-7a8b9c0d1e09
 status: stable
-description: Detects the installation of new Windows services using the sc.exe command-line utility. Attackers create malicious services to establish persistence with SYSTEM-level privileges and execute payloads on compromised hosts.
+description: Detects creation of Windows services using sc.exe binary. Attackers create malicious services for persistence with SYSTEM-level privileges and to masquerade as legitimate software.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,14 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  keywords:
-    - "T1543.003-service"
-    - "sc create"
+  selection:
+    event_type: "persistence"
+    process.name: "sc.exe"
+    process.command_line: "contains|sc.exe create|binpath"
+  condition: selection
 falsepositives:
-  - Legitimate software installations that register system services
+  - Legitimate software installation registering system services
   - Security tool deployments requiring Windows service registration
 level: high
+mitre:
+  technique: T1543.003

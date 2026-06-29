@@ -1,3 +1,1 @@
-2026-06-28 09:55:12 DEFENSE_EVASION Sysmon EventID=1 Process: wevtutil.exe cl System user=NT AUTHORITY\SYSTEM T1070.001-evtx
-2026-06-28 09:55:12 DEFENSE_EVASION EventLog EventID=1102 Security log cleared by user=admin workstation=WS-ADMIN
-2026-06-28 09:55:13 DEFENSE_EVASION EventLog EventID=104 Event log System cleared by NT AUTHORITY\SYSTEM
+{"ts":"2026-06-28T09:55:12Z","event_type":"defense_evasion","category":"process","action":"process_start","process":{"name":"wevtutil.exe","path":"C:\\Windows\\System32\\wevtutil.exe","pid":4100},"parent":{"name":"cmd.exe","pid":4099},"user":{"name":"admin","domain":"CORP"},"host":{"name":"WS-ADMIN","ip":"10.0.0.200"},"command_line":"wevtutil.exe cl System","threat":{"technique_id":"T1070.001","technique_name":"Event Log Clearing","tactic":"Defense Evasion"},"severity":90,"confidence":95,"message":"Security event log cleared via wevtutil.exe by admin from WS-ADMIN"}

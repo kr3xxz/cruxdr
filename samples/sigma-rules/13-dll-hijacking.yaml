@@ -1,7 +1,7 @@
 title: DLL Search Order Hijacking Detection
 id: a3b4c5d6-e7f8-4a9b-8c0d-1e2f3a4b5c13
 status: stable
-description: Detects indicators of DLL search order hijacking where attackers place a malicious DLL in a directory searched before the legitimate system DLL. This technique allows code execution with the privileges of the calling process without requiring explicit code injection.
+description: Detects DLLs loaded from non-standard paths that may indicate search order hijacking. Attackers place malicious DLLs in user-writable directories to hijack legitimate process load orders.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,15 @@ logsource:
   category: image_load
   product: windows
 detection:
-  keywords:
-    - "T1574.001-dll"
-    - "DLL hijack"
+  selection:
+    event_type: "privilege_escalation"
+    category: "library"
+    file.name: "*.dll"
+    file.path: "contains|Users|public|AppData|Temp"
+  condition: selection
 falsepositives:
-  - Software applications that bundle custom DLL versions for compatibility
-  - Legitimate DLL sideloading by approved vendor applications and plugins
+  - Applications bundling custom DLL versions for backward compatibility
+  - Approved software sideloading vendor DLLs for plugin architecture
 level: high
+mitre:
+  technique: T1574.001

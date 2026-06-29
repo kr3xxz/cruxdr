@@ -20,7 +20,4 @@ app.include_router(router)
 
 @app.get("/")
 async def root():
-
-    return {
-        "service": "soar-service"
-    }
+    return {"service": "soar-service"}

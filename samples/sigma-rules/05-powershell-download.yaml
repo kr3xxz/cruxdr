@@ -1,7 +1,7 @@
 title: Malicious PowerShell Remote Download
 id: e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a05
 status: stable
-description: Detects PowerShell scripts that use the DownloadString method to retrieve payloads from remote web servers. Attackers frequently use this technique to download and execute malicious scripts in memory without writing artifacts to disk.
+description: Detects PowerShell scripts using DownloadString method to retrieve payloads from remote servers. Attackers use this to download stage-2 payloads directly into memory without touching disk.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -13,10 +13,17 @@ logsource:
   category: process_creation
   product: windows
 detection:
-  keywords:
-    - "T1059.001-powershell"
-    - "DownloadString"
+  selection1:
+    event_type: "execution"
+    process.name: "powershell.exe"
+    process.command_line: "contains|DownloadString|-enc"
+  selection2:
+    event_type: "execution"
+    dns.question.name: "contains|evil.c2|evil|malicious"
+  condition: selection1 or selection2
 falsepositives:
-  - Legitimate PowerShell scripts that download updates or configurations
-  - Administrative automation scripts using web request methods
-level: high
+  - Legitimate PowerShell automation downloading approved updates
+  - Package managers using PowerShell web request cmdlets
+level: critical
+mitre:
+  technique: T1059.001

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-
+from app.core.matcher import SigmaMatcher
 from app.store.rules import sigma_rules
 
 router = APIRouter()
@@ -7,47 +7,52 @@ router = APIRouter()
 
 @router.post("/detect")
 async def detect(body: dict):
-
     events = body.get("events", [])
-    alerts = []
+    rule_alerts = {}
 
     for event in events:
-        raw = str(event.get("raw", "")).lower()
-        message = str(event.get("message", "")).lower()
-        content = raw + " " + message
+        try:
+            matches = SigmaMatcher.match(event)
+        except Exception as e:
+            return {
+                "alerts": [],
+                "error": f"match error: {e}",
+                "rules_loaded": len(sigma_rules),
+                "events_received": len(events),
+            }
+        for alert in matches:
+            title = alert.get("title", "Sigma Match")
+            if title not in rule_alerts:
+                rule_alerts[title] = {
+                    "title": title,
+                    "severity": alert.get("severity", "medium"),
+                    "mitre_attack": alert.get("mitre_attack", ""),
+                    "alert_type": alert.get("alert_type", title),
+                    "event_count": 0,
+                    "hosts": set(),
+                    "users": set(),
+                    "event": None,
+                }
+            entry = rule_alerts[title]
+            entry["event_count"] += 1
+            ev = alert.get("event", {})
+            if entry["event"] is None:
+                entry["event"] = ev
+            host = ev.get("host", "")
+            user = ev.get("username", "")
+            if host:
+                entry["hosts"].add(host)
+            if user:
+                entry["users"].add(user)
 
-        for rule in sigma_rules:
-            detection = rule.get("detection", {})
-            keywords = detection.get("keywords", [])
+    result = []
+    for entry in rule_alerts.values():
+        entry["hosts"] = list(entry["hosts"])
+        entry["users"] = list(entry["users"])
+        result.append(entry)
 
-            if not keywords:
-                continue
-
-            for keyword in keywords:
-                if keyword.lower() in content:
-                    severity = rule.get("severity") or rule.get("level") or "medium"
-                    mitre = rule.get("mitre", {})
-                    if isinstance(mitre, dict):
-                        mitre_id = mitre.get("technique", "")
-                    else:
-                        mitre_id = str(mitre)
-                    if not mitre_id:
-                        for tag in rule.get("tags", []):
-                            t = tag.lower()
-                            if t.startswith("attack.t"):
-                                mid = tag.split(".", 1)[1]
-                                mitre_id = mid[0].upper() + mid[1:]
-                                break
-                            if t.startswith("t") and "." in t:
-                                mitre_id = tag[0].upper() + tag[1:]
-                                break
-                    alerts.append({
-                        "title": rule.get("title", "Sigma Match"),
-                        "severity": severity,
-                        "mitre_attack": mitre_id,
-                        "alert_type": rule.get("title", "Sigma Match"),
-                        "event": event,
-                    })
-                    break
-
-    return {"alerts": alerts}
+    return {
+        "alerts": result,
+        "rules_loaded": len(sigma_rules),
+        "events_received": len(events),
+    }

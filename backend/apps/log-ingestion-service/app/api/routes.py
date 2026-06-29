@@ -11,7 +11,6 @@ from app.core.detector import detect_threats
 
 from app.core.producer import (
     send_event,
-    send_alert,
 )
 
 from app.core.store import (
@@ -96,40 +95,35 @@ async def upload(
                 flush=True
             )
 
-    for alert in alerts:
-
-        try:
-
-            send_alert(
-                alert
-            )
-
-        except Exception as e:
-
-            print(
-                f"[ALERT ERROR] {e}",
-                flush=True
-            )
-
     sigma_alerts = []
+    sigma_error = ""
+    sigma_rules_loaded = 0
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.post(
                 "http://cruxdr-sigma-service:8000/detect",
                 json={"events": parsed_events}
             )
             if resp.status_code == 200:
-                sigma_alerts = resp.json().get("alerts", [])
+                body = resp.json()
+                sigma_alerts = body.get("alerts", [])
+                sigma_rules_loaded = body.get("rules_loaded", 0)
+                sigma_error = body.get("error", "")
                 for sa in sigma_alerts:
                     ALERTS.append(sa)
                 ALERTS[:] = ALERTS[-1000:]
+            else:
+                sigma_error = f"sigma-service returned status {resp.status_code}"
     except Exception as e:
+        sigma_error = f"sigma detect error: {e}"
         print(f"[SIGMA DETECT ERROR] {e}", flush=True)
 
     return {
         "events": parsed_events,
         "alerts": alerts,
         "sigma_alerts": sigma_alerts,
+        "sigma_error": sigma_error,
+        "sigma_rules_loaded": sigma_rules_loaded,
         "event_count": len(parsed_events),
         "alert_count": len(alerts) + len(sigma_alerts),
     }

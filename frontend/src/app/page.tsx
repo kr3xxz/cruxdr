@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import SigmaUpload from "@/components/sigma/sigma-upload";
 import LogExplorer from "@/components/logs/log-explorer";
 import { Sidebar } from "@/components/layout/sidebar";
 import { AIPanel } from "@/components/incidents/ai-panel";
-import { SOCCommandCenter } from "@/components/soc/soc-command-center";
+import dynamic from "next/dynamic";
+
+const SOCCommandCenter = dynamic(
+  () => import("@/components/soc/soc-command-center").then((m) => m.SOCCommandCenter),
+  { ssr: false }
+);
 import { ThreatTrends } from "@/components/analytics/threat-trends";
 import { MitreHeatmap } from "@/components/mitre/mitre-heatmap";
 import { CorrelatedIncidents } from "@/components/incidents/correlated-incidents";
@@ -83,15 +88,24 @@ const pageVariants = {
 
 export default function DashboardPage() {
   useLiveEvents();
-  const { activeTab } = useUIStore();
+  const { activeTab, setActiveTab } = useUIStore();
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeTab]);
 
   const addEvent = useEventStore((state) => state.addEvent);
   const storedEvents = useEventStore((state) => state.events);
   const [uploadStatus, setUploadStatus] = useState("");
   const [storeCount, setStoreCount] = useState(0);
 
-  const numCritical = storedEvents.filter((e: any) => e.severity === "critical").length;
-  const numHigh = storedEvents.filter((e: any) => e.severity === "high").length;
+  const sevToLabel = (s: any) => {
+    if (typeof s === "number") return s >= 70 ? "critical" : s >= 40 ? "high" : s >= 20 ? "medium" : "low";
+    return (s || "").toString().toLowerCase();
+  };
+  const numCritical = storedEvents.filter((e: any) => sevToLabel(e.severity) === "critical").length;
+  const numHigh = storedEvents.filter((e: any) => sevToLabel(e.severity) === "high").length;
 
   useEffect(() => {
     setStoreCount(storedEvents.length);
@@ -126,7 +140,13 @@ export default function DashboardPage() {
       });
       const data = await response.json();
       const parsedSigmaAlerts = data.sigma_alerts || [];
+      if (data.sigma_error) {
+        setUploadStatus(`Sigma error: ${data.sigma_error}`);
+        return;
+      }
+      const sigmaRules = data.sigma_rules_loaded ?? -1;
       const alertTypeToAttack: Record<string, string> = {
+        "Malicious File Execution Detection": "malicious_file_execution",
         "SSH Brute Force": "brute_force",
         "Account Compromise": "brute_force",
         "Credential Dumping": "credential_dumping",
@@ -149,7 +169,7 @@ export default function DashboardPage() {
         "Kerberos Ticket Extraction from LSASS Memory": "credential_dumping",
         "Malicious PowerShell Remote Download": "privilege_escalation",
         "WMI Process Creation via Win32_Process": "privilege_escalation",
-        "Scheduled Task Malicious Creation via schtasks.exe": "privilege_escalation",
+        "Scheduled Task Malicious Creation via schtasks.exe": "scheduled_task",
         "Registry Run Key Modification for Persistence": "ransomware",
         "Malicious Windows Service Installation via sc.exe": "ransomware",
         "Startup Folder Modification for Persistence": "ransomware",
@@ -163,24 +183,32 @@ export default function DashboardPage() {
         "RDP Brute Force Authentication Attempts": "lateral_movement",
         "SMB Admin Share Access for Lateral Movement": "lateral_movement",
         "Data Exfiltration via DNS Tunneling": "exfiltration",
+        "Local Admin Account Creation via Net.EXE": "local_admin_creation",
       };
       for (const alert of parsedSigmaAlerts) {
         const ev = alert.event || {};
+        const attackType = alertTypeToAttack[alert.alert_type] || alert.alert_type?.toLowerCase().replace(/\s+/g, "_") || "unknown";
+        const hostStr = ev.host || alert.hosts?.[0] || "";
+        const userStr = ev.username || ev.user || alert.users?.[0] || "";
+        const count = alert.event_count || 1;
         addEvent({
-          attack_type: alertTypeToAttack[alert.alert_type] || alert.alert_type?.toLowerCase().replace(/\s+/g, "_") || "unknown",
+          attack_type: attackType,
           severity: alert.severity || "high",
-          message: alert.title || `${alert.alert_type} detected`,
+          message: `${alert.title} (${count} event${count > 1 ? "s" : ""})`,
           mitre_technique: alert.mitre_attack || "",
           source_ip: ev.source_ip || "",
-          host: ev.host || "",
-          user: ev.username || ev.user || "",
+          host: hostStr,
+          user: userStr,
+          event_count: count,
+          hosts: alert.hosts || [],
           timestamp: new Date().toISOString(),
         });
       }
+      const totalSigmaAlerts = parsedSigmaAlerts.reduce((s: number, a: any) => s + (a.event_count || 1), 0);
       setUploadStatus(
         parsedSigmaAlerts.length > 0
-          ? `Uploaded: ${parsedSigmaAlerts.length} sigma matches detected`
-          : `Uploaded: 0 sigma matches — no rules loaded for this log`
+          ? `Uploaded: ${totalSigmaAlerts} events triggered ${parsedSigmaAlerts.length} rule(s)`
+          : `Uploaded: 0 sigma matches (rules loaded: ${sigmaRules}, events: ${data.event_count || 0})`
       );
     } catch (err: any) {
       setUploadStatus(`Upload failed: ${err.message}`);
@@ -192,9 +220,9 @@ export default function DashboardPage() {
   const tabIcon = TAB_ICONS[activeTab];
 
   return (
-    <div className="flex bg-background min-h-screen bg-grid">
+    <div className="flex bg-background h-screen overflow-hidden bg-grid">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto relative z-[1]">
+      <main ref={mainRef} className="flex-1 overflow-y-auto relative z-[1]">
         {/* Top Header Bar */}
         <div className="sticky top-0 z-20 flex items-center justify-between header-glass px-6 py-3 relative">
           <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/15 to-transparent" />
@@ -212,15 +240,6 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             {activeTab === "dashboard" && (
               <>
-                <button
-                  onClick={clearAll}
-                  className="flex items-center gap-1.5 rounded-md border border-red-900/20 bg-red-950/15 px-3 py-1.5 text-xs text-red-400/80 hover:text-red-400 hover:bg-red-950/30 hover:border-red-800/30 transition-all duration-200"
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                  </svg>
-                  Clear All
-                </button>
                 <div className="flex items-center gap-2 text-xs font-mono">
                   <span className="flex items-center gap-1.5 text-zinc-500">
                     <span className="relative flex h-2 w-2">
@@ -312,7 +331,7 @@ export default function DashboardPage() {
                               transition={{ delay: idx * 0.03 }}
                               className="flex items-start gap-3 rounded-lg border border-red-900/15 bg-red-950/15 p-4 hover:border-red-800/25 hover:bg-red-950/25 transition-all duration-200"
                             >
-                              <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="text-sm font-bold text-white">
                                     {(alert.attack_type || "unknown").replace(/_/g, " ").toUpperCase()}
@@ -320,13 +339,24 @@ export default function DashboardPage() {
                                   {alert.mitre_technique && (
                                     <span className="text-[10px] text-violet-400/80 font-mono">{alert.mitre_technique}</span>
                                   )}
+                                  {alert.event_count > 1 && (
+                                    <span className="text-[10px] text-amber-400/70 font-mono">x{alert.event_count}</span>
+                                  )}
                                 </div>
                                 <p className="text-xs text-zinc-400">{alert.message}</p>
                                 <p className="text-[10px] text-zinc-600 mt-1 font-mono">
                                   {[alert.host, alert.source_ip, alert.user].filter(Boolean).join(" | ") || "unknown"}
                                 </p>
                               </div>
-                              <SeverityBadge severity={alert.severity} />
+                              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                <SeverityBadge severity={alert.severity} />
+                                <button
+                                  onClick={() => setActiveTab("incidents")}
+                                  className="text-[10px] text-zinc-600 font-mono hover:text-cyan-400 transition-colors"
+                                >
+                                  View in Incidents →
+                                </button>
+                              </div>
                             </motion.div>
                           ))}
                         </div>

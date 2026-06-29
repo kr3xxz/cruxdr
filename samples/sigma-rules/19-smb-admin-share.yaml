@@ -1,7 +1,7 @@
 title: SMB Admin Share Access for Lateral Movement
 id: a9b0c1d2-e3f4-4a5b-8c6d-7e8f9a0b1c19
 status: stable
-description: Detects access to hidden SMB administrative shares such as ADMIN$ or C$ from remote systems. Attackers leverage admin shares to transfer tools and access files on remote systems as part of lateral movement and data staging operations.
+description: Detects access to hidden SMB administrative shares (C$, ADMIN$) from remote hosts. Attackers use admin shares to transfer tools and exfiltrate data during lateral movement.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -10,13 +10,17 @@ tags:
   - attack.lateral-movement
   - attack.t1021.002
 logsource:
-  category: process_creation
+  category: network_connection
   product: windows
 detection:
-  keywords:
-    - "T1021.002-smb"
-    - "admin share"
+  selection:
+    event_type: "lateral_movement"
+    category: "network"
+    destination.port: "445"
+  condition: selection
 falsepositives:
-  - Legitimate remote system administration accessing admin shares
-  - Enterprise backup software accessing administrative shares for protection
+  - Legitimate file sharing and remote administration via SMB
+  - Enterprise backup solutions accessing admin shares
 level: high
+mitre:
+  technique: T1021.002

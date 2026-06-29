@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useEventStore } from "@/store/live-events";
+import { useUIStore } from "@/store/ui-store";
 
 function classifyAlert(event: any) {
   const attackType = event.attack_type || "";
@@ -10,26 +11,31 @@ function classifyAlert(event: any) {
   const severity = event.severity || "medium";
 
   const rules: Record<string, { title: string; mitre: string }> = {
-    ransomware:          { title: "Ransomware Detection",           mitre: "T1486" },
-    brute_force:         { title: "Brute Force Detection",          mitre: "T1110" },
-    phishing:            { title: "Phishing Detection",             mitre: "T1566" },
-    lateral_movement:    { title: "Lateral Movement Detection",     mitre: "T1021" },
-    exfiltration:        { title: "Data Exfiltration Detection",    mitre: "T1048" },
-    credential_dumping:  { title: "Credential Dumping Detection",   mitre: "T1003" },
-    privilege_escalation:{ title: "Privilege Escalation Detection", mitre: "T1068" },
+    ransomware:          { title: "Ransomware Detection",              mitre: "T1486" },
+    brute_force:         { title: "Brute Force Detection",             mitre: "T1110" },
+    phishing:            { title: "Phishing Detection",                mitre: "T1566" },
+    lateral_movement:    { title: "Lateral Movement Detection",        mitre: "T1021" },
+    exfiltration:        { title: "Data Exfiltration Detection",       mitre: "T1048" },
+    credential_dumping:  { title: "Credential Dumping Detection",      mitre: "T1003" },
+    privilege_escalation:{ title: "Privilege Escalation Detection",    mitre: "T1068" },
+    scheduled_task:      { title: "Scheduled Task Persistence",        mitre: "T1053.005" },
+    malicious_file_execution: { title: "Malicious File Execution Detection", mitre: "T1204.002" },
+    local_admin_creation: { title: "Local Admin Account Creation via Net.EXE", mitre: "T1136.001" },
   };
 
   if (attackType && rules[attackType]) {
     return { ...rules[attackType], severity, event };
   }
 
-  if (msg.includes("encrypt"))     return { title: "Ransomware Detection",           mitre: "T1486", severity, event };
+  if (msg.includes("encrypt"))      return { title: "Ransomware Detection",           mitre: "T1486",    severity, event };
+  if (msg.includes("download") || msg.includes("backdoor")) return { title: "Malicious File Execution Detection", mitre: "T1204.002", severity, event };
   if (msg.includes("login") || msg.includes("failed")) return { title: "Brute Force Detection", mitre: "T1110", severity, event };
-  if (msg.includes("phish"))       return { title: "Phishing Detection",             mitre: "T1566", severity, event };
+  if (msg.includes("phish"))        return { title: "Phishing Detection",             mitre: "T1566",    severity, event };
   if (msg.includes("exfil") || msg.includes("transfer")) return { title: "Data Exfiltration Detection", mitre: "T1048", severity, event };
-  if (msg.includes("remote") || msg.includes("psexec"))  return { title: "Lateral Movement Detection", mitre: "T1021", severity, event };
+  if (msg.includes("remote") || msg.includes("psexec")) return { title: "Lateral Movement Detection", mitre: "T1021", severity, event };
   if (msg.includes("mimikatz") || msg.includes("credential")) return { title: "Credential Dumping Detection", mitre: "T1003", severity, event };
-  if (msg.includes("sudo") || msg.includes("privilege"))  return { title: "Privilege Escalation Detection", mitre: "T1068", severity, event };
+  if (msg.includes("sudo") || msg.includes("privilege")) return { title: "Privilege Escalation Detection", mitre: "T1068", severity, event };
+  if (msg.includes("scheduled") || msg.includes("task") || msg.includes("schtasks")) return { title: "Scheduled Task Persistence", mitre: "T1053.005", severity, event };
 
   return null;
 }
@@ -38,6 +44,7 @@ export function SigmaStudio() {
   const [rules, setRules] = useState<any[]>([]);
   const events = useEventStore((state) => state.events);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const { setActiveTab } = useUIStore();
 
   useEffect(() => {
     const loadRules = async () => {
@@ -53,16 +60,9 @@ export function SigmaStudio() {
   }, []);
 
   useEffect(() => {
-    const seen = new Set<string>();
     const result = (events ?? [])
       .map(classifyAlert)
-      .filter((a): a is NonNullable<typeof a> => {
-        if (!a) return false;
-        const key = a.title;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
+      .filter((a): a is NonNullable<typeof a> => a !== null)
       .slice(0, 100);
     setAlerts(result);
   }, [events]);
@@ -72,7 +72,7 @@ export function SigmaStudio() {
 
       <h2 className="text-white text-2xl font-bold mb-6">Sigma Studio</h2>
 
-      <div className="space-y-4">
+      <div className="max-h-[300px] overflow-y-auto space-y-4 pr-1">
         {rules.map((rule, index) => (
           <motion.div
             key={index}
@@ -96,7 +96,7 @@ export function SigmaStudio() {
           Triggered Alerts ({alerts.length}) - Events in store: {events?.length ?? 0}
         </h3>
 
-        <div className="space-y-3">
+        <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
           {alerts.map((alert, index) => (
             <div
               key={index}
@@ -108,7 +108,15 @@ export function SigmaStudio() {
                   <p className="text-zinc-400 text-xs">{alert.event?.message}</p>
                   <p className="text-zinc-500 text-xs mt-1">MITRE: {alert.mitre}</p>
                 </div>
-                <span className="text-red-400 font-bold uppercase">{alert.severity}</span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-red-400 font-bold uppercase">{alert.severity}</span>
+                  <button
+                    onClick={() => setActiveTab("incidents")}
+                    className="text-[10px] text-zinc-600 font-mono hover:text-cyan-400 transition-colors whitespace-nowrap"
+                  >
+                    View in Incidents →
+                  </button>
+                </div>
               </div>
             </div>
           ))}

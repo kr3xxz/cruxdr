@@ -1,22 +1,26 @@
 title: RDP Brute Force Authentication Attempts
 id: f8a9b0c1-d2e3-4f4a-8b5c-6d7e8f9a0b18
 status: stable
-description: Detects multiple failed Remote Desktop Protocol authentication attempts from a single source indicative of brute force attacks. Attackers use brute force techniques to guess weak RDP credentials and gain initial access to target systems for further compromise.
+description: Detects multiple failed RDP authentication attempts from a single source IP indicative of brute force attack. Attackers brute force RDP credentials to gain initial access to target systems.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
-  - https://attack.mitre.org/techniques/T1021/001/
+  - https://attack.mitre.org/techniques/T1110/
 tags:
-  - attack.lateral-movement
-  - attack.t1021.001
+  - attack.credential-access
+  - attack.t1110
 logsource:
-  category: process_creation
+  category: authentication
   product: windows
 detection:
-  keywords:
-    - "T1021.001-rdp"
-    - "RDP brute"
+  selection:
+    event_type: "failed_login"
+    category: "authentication"
+    user.name: "contains|administrator|admin|root"
+  condition: selection
 falsepositives:
-  - Users mistyping passwords multiple times during normal login
-  - Misconfigured applications continuously attempting RDP connections
+  - Users mistyping passwords during normal authentication
+  - Misconfigured applications continuously attempting connections
 level: high
+mitre:
+  technique: T1110

@@ -37,7 +37,7 @@ export function CorrelatedIncidents() {
     return matchesSearch && matchesSeverity;
   });
 
-  const selected = selectedId ? incidents.find((i) => i.id === selectedId || i.title === selectedId) : null;
+  const selected = selectedId ? incidents.find((i) => (i.id || i.title) === selectedId) : null;
 
   const severityCounts = incidents.reduce((acc: Record<string, number>, inc: any) => {
     const sev = (inc.severity || "unknown").toLowerCase();
@@ -200,24 +200,20 @@ export function CorrelatedIncidents() {
                       </div>
                     </div>
 
-                    {/* Related Events */}
+                    {/* Related Alerts — IOCs */}
                     <div>
-                      <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Related Alerts</h4>
-                      {selected.events && selected.events.length > 0 ? (
+                      <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Indicators (IOCs)</h4>
+                      {selected.iocs && selected.iocs.length > 0 ? (
                         <div className="space-y-2">
-                          {selected.events.map((ev: any, i: number) => (
+                          {selected.iocs.map((ioc: string, i: number) => (
                             <div key={i} className="rounded-md border border-zinc-800/60 bg-zinc-900/30 p-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <SeverityDot severity={ev.severity} />
-                                <span className="text-xs font-semibold text-white">{ev.title || ev.type || `Event ${i + 1}`}</span>
-                              </div>
-                              <p className="text-[11px] text-zinc-500 font-mono">{ev.message || ev.description || ""}</p>
+                              <p className="text-xs font-mono text-zinc-400 break-all">{ioc}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
                         <div className="flex items-center justify-center h-32 text-zinc-700 text-xs">
-                          No related alerts
+                          No IOCs recorded
                         </div>
                       )}
                     </div>
@@ -235,7 +231,7 @@ export function CorrelatedIncidents() {
                               {i < selected.timeline.length - 1 && <div className="w-px flex-1 bg-zinc-800" />}
                             </div>
                             <div className="pb-4">
-                              <p className="text-xs text-zinc-400">{entry.message || entry.action}</p>
+                              <p className="text-xs text-zinc-400">{entry.description || entry.step || entry.message || entry.action}</p>
                               <p className="text-[10px] text-zinc-600 font-mono">{entry.timestamp || ""}</p>
                             </div>
                           </div>

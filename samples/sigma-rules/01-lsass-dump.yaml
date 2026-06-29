@@ -1,7 +1,7 @@
 title: LSASS Memory Dumping via procdump.exe
 id: a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c01
 status: stable
-description: Detects the use of procdump.exe to dump the memory of the Local Security Authority Subsystem Service (LSASS) process. Attackers use this technique to extract credentials from LSASS memory for lateral movement and privilege escalation.
+description: Detects procdump.exe accessing lsass.exe process memory for credential dumping. Attackers dump LSASS process memory to extract plaintext credentials and hashes for lateral movement.
 author: CruXDR SOC Team
 date: 2026-06-28
 references:
@@ -10,13 +10,17 @@ tags:
   - attack.credential-access
   - attack.t1003.001
 logsource:
-  category: process_creation
+  category: process_access
   product: windows
 detection:
-  keywords:
-    - "T1003.001-lsass"
-    - "procdump"
+  selection:
+    event_type: "credential_access"
+    process.name: "procdump.exe"
+    target_process.name: "lsass.exe"
+  condition: selection
 falsepositives:
-  - Legitimate administrative troubleshooting by IT staff
-  - Approved security testing and penetration exercises
+  - IT staff troubleshooting LSASS performance issues with Microsoft approved tools
+  - Authorized penetration testing with documented scope and approvals
 level: critical
+mitre:
+  technique: T1003.001

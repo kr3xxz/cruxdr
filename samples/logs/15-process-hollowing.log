@@ -1,3 +1,1 @@
-2026-06-28 09:50:44 DEFENSE_EVASION Sysmon EventID=8 CreateRemoteThread detected in svchost.exe (PID=1024) from PID=3152 T1055.001-hollow
-2026-06-28 09:50:44 DEFENSE_EVASION EventLog EventID=4688 Suspicious thread creation: target=svchost.exe source=C:\Windows\Tasks\rundll32.exe
-2026-06-28 09:50:45 DEFENSE_EVASION Sysmon EventID=10 Process accessed: svchost.exe (PID=1024) by C:\Windows\Tasks\rundll32.exe (PID=3152)
+{"ts":"2026-06-28T09:50:44Z","event_type":"defense_evasion","category":"process","action":"remote_thread_creation","process":{"name":"rundll32.exe","path":"C:\\Windows\\Tasks\\rundll32.exe","pid":3152},"target":{"name":"svchost.exe","path":"C:\\Windows\\System32\\svchost.exe","pid":1024},"host":{"name":"SRV-WEB","ip":"10.0.1.25"},"threat":{"technique_id":"T1055.001","technique_name":"Process Hollowing","tactic":"Defense Evasion"},"severity":90,"confidence":92,"message":"CreateRemoteThread detected in svchost.exe from rundll32.exe on SRV-WEB"}

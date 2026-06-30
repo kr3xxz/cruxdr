@@ -259,6 +259,7 @@ export default function DashboardPage() {
               initial="initial"
               animate="animate"
               exit="exit"
+              onAnimationComplete={() => mainRef.current?.scrollTo({ top: 0, behavior: "instant" })}
             >
               {activeTab === "dashboard" && (
                 <div className="space-y-6">

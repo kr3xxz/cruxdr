@@ -23,6 +23,10 @@ export const API = {
   hunt:
     process.env
       .NEXT_PUBLIC_HUNT_API,
+
+  ai:
+    process.env
+      .NEXT_PUBLIC_AI_API,
 };
 
 export const WS = {

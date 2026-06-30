@@ -263,6 +263,9 @@ services:
       - "8001:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      - ZEN_API_KEY=${ZEN_API_KEY}
+      - ZEN_MODEL=${ZEN_MODEL:-deepseek-v4-flash-free}
     networks:
       - crux-network
     restart: unless-stopped

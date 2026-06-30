@@ -112,21 +112,32 @@ class IncidentProcessor:
                             ],
                         }
 
-                        exists = any(
-                            x.get("title") == incident["title"]
-                            and x.get("host") == incident["host"]
-                            and x.get("user") == incident["user"]
-                            for x in incidents_store
-                        )
+                        found = None
+                        for x in incidents_store:
+                            if x.get("title") == incident["title"] and x.get("host") == incident["host"] and x.get("user") == incident["user"]:
+                                found = x
+                                break
 
-                        if not exists:
-                            incidents_store.append(
-                                incident
-                            )
-
-                            incidents_store[:] = (
-                                incidents_store[-100:]
-                            )
+                        if found:
+                            found["alert_count"] = found.get("alert_count", 1) + 1
+                            found["last_seen"] = incident.get("timestamp", "")
+                            incoming_sev = incident.get("severity", "medium")
+                            sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+                            if sev_order.get(incoming_sev, 0) > sev_order.get(found.get("severity", "low"), 0):
+                                found["severity"] = incoming_sev
+                            existing_iocs = set(found.get("iocs", []))
+                            for ioc in incident.get("iocs", []):
+                                if ioc and ioc != "N/A":
+                                    existing_iocs.add(ioc)
+                            found["iocs"] = list(existing_iocs)
+                            incidents_store.remove(found)
+                            incidents_store.append(found)
+                            incident = found
+                        else:
+                            incident["alert_count"] = 1
+                            incident["last_seen"] = incident.get("timestamp", "")
+                            incidents_store.append(incident)
+                            incidents_store[:] = incidents_store[-100:]
 
                         try:
 

@@ -11,6 +11,7 @@ router = APIRouter()
 
 class ChatRequest(BaseModel):
     question: str
+    events: list = []
 
 
 @router.post("/chat")
@@ -18,10 +19,18 @@ async def ai_chat(
     request: ChatRequest,
 ):
 
-    response = AISOCService.ask(
-        request.question
+    context_parts = []
+    if request.events:
+        context_parts.append(f"Recent security events:\n{request.events}")
+
+    context_str = "\n\n".join(context_parts) if context_parts else ""
+
+    text, provider = AISOCService.ask(
+        request.question,
+        context_str,
     )
 
     return {
-        "response": response
+        "response": text,
+        "provider": provider,
     }

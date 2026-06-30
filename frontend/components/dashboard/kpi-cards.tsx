@@ -39,19 +39,18 @@ export function KPICards() {
       const incidents = await res.json();
 
       if (incidents.length > 0) {
+        const totalTriggers = incidents.reduce((sum: number, i: any) => sum + (i.alert_count || 1), 0);
         const threatScore = incidents.reduce((score: number, incident: any) => {
           const sev = (incident.severity || "").toUpperCase();
-          if (sev === "CRITICAL") return score + 40;
-          if (sev === "HIGH") return score + 20;
-          if (sev === "MEDIUM") return score + 10;
-          return score + 5;
+          const base = sev === "CRITICAL" ? 40 : sev === "HIGH" ? 20 : sev === "MEDIUM" ? 10 : 5;
+          return score + base * (incident.alert_count || 1);
         }, 0);
 
         const mitre = new Set(incidents.map((i: any) => i.mitre));
         const assets = new Set(incidents.flatMap((i: any) => [i.host, i.user]));
 
         setStats({
-          incidents: incidents.length,
+          incidents: totalTriggers,
           threatScore,
           techniques: mitre.size,
           assets: assets.size,

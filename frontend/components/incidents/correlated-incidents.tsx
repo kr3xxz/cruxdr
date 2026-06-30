@@ -170,11 +170,22 @@ export function CorrelatedIncidents() {
                               <span className="text-sm font-semibold text-white truncate">
                                 {incident.title || "Untitled Incident"}
                               </span>
+                              {(incident.alert_count || 0) > 1 && (
+                                <span className="shrink-0 rounded border border-amber-500/30 bg-amber-950/30 px-1.5 py-0.5 text-[10px] font-mono text-amber-400">
+                                  x{incident.alert_count}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
                               <span>{incident.user || "N/A"}</span>
                               <span className="text-zinc-700">•</span>
                               <span>{incident.host || "N/A"}</span>
+                              {incident.last_seen && (
+                                <>
+                                  <span className="text-zinc-700">•</span>
+                                  <span>{new Date(incident.last_seen).toLocaleTimeString()}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                           <SeverityBadge severity={incident.severity} />

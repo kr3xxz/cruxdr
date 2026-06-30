@@ -3,7 +3,7 @@ import json
 from kafka import KafkaConsumer
 
 consumer = KafkaConsumer(
-    "siem-events",
+    "cruxdr-logs",
 
     bootstrap_servers="crux-kafka:9092",
 

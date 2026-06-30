@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useGraphStore } from "@/store/graph-store";
+import { useLiveGraph } from "@/hooks/use-live-graph";
 
 const typeConfig: Record<string, { bg: string; border: string; text: string; icon: string }> = {
   source: { bg: "bg-purple-950/40", border: "border-purple-500/30", text: "text-purple-400", icon: "🌐" },
@@ -16,16 +18,41 @@ const severityBorder: Record<string, string> = {
   low: "border-l-blue-500",
 };
 
+function normalizeWsNodes(nodes: any[]): any[] {
+  return nodes.map((n: any) => {
+    if (n.label !== undefined) return n;
+    const d = n.data || {};
+    return {
+      id: d.user || d.host || d.label || n.id,
+      type: n.type === "ransomware" ? "process" : n.type || "process",
+      label: d.label || d.host || d.user || n.id,
+      severity: d.severity || "medium",
+      mitre: d.mitre || "",
+    };
+  });
+}
+
 export function LiveAttackGraph() {
+  useLiveGraph();
+  const wsNodes = useGraphStore((state) => state.nodes);
+  const wsEdges = useGraphStore((state) => state.edges);
   const [graph, setGraph] = useState<any>(null);
 
   const fetchGraph = async () => {
     try {
       const res = await fetch("http://localhost:8030/graph");
       const data = await res.json();
-      setGraph(data);
+      if (data?.nodes && data.nodes.length > 0) {
+        setGraph(data);
+      } else if (wsNodes.length > 0) {
+        setGraph({ nodes: normalizeWsNodes(wsNodes), edges: wsEdges });
+      } else if (graph === null) {
+        setGraph(data);
+      }
     } catch (err) {
-      console.error(err);
+      if (wsNodes.length > 0 && graph === null) {
+        setGraph({ nodes: normalizeWsNodes(wsNodes), edges: wsEdges });
+      }
     }
   };
 
@@ -33,7 +60,7 @@ export function LiveAttackGraph() {
     fetchGraph();
     const interval = setInterval(fetchGraph, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [wsNodes, wsEdges]);
 
   return (
     <div className="glass-panel rounded-xl p-6">

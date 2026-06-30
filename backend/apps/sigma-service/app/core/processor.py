@@ -69,7 +69,7 @@ class SigmaProcessor:
 
             consumer = KafkaConsumer(
                 "cruxdr-logs",
-                bootstrap_servers="kafka:9092",
+                bootstrap_servers="crux-kafka:9092",
                 value_deserializer=lambda m: json.loads(m.decode("utf-8")),
                 auto_offset_reset="earliest",
                 group_id="sigma-service"
@@ -89,13 +89,14 @@ class SigmaProcessor:
 
                     for message in records:
 
-                        event = message.value
-
-                        logs_store.append(event)
-                        logs_store[:] = logs_store[-200:]
-
-                        alerts = SigmaMatcher.match(event)
-                        batch_alerts.extend(alerts)
+                        try:
+                            event = message.value
+                            logs_store.append(event)
+                            logs_store[:] = logs_store[-200:]
+                            alerts = SigmaMatcher.match(event)
+                            batch_alerts.extend(alerts)
+                        except Exception as e:
+                            print(f"[SIGMA EVENT ERROR] {e}", flush=True)
 
                 if batch_alerts:
                     merged = _merge_alerts(batch_alerts)
@@ -103,6 +104,7 @@ class SigmaProcessor:
                     for alert in merged:
                         print(f"[ALERT] {alert}")
                         producer.send("alerts", alert)
+                    producer.flush()
 
                     alerts_store[:] = _dedup_store(
                         alerts_store[:], merged

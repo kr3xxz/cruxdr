@@ -1,31 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SeverityBadge, SeverityDot, getSeverityColor } from "@/components/ui/severity-badge";
 import { SectionHeader } from "@/components/ui/section-header";
 import { SearchInput, FilterButton, FilterBar } from "@/components/ui/search-input";
+import { useEventStore } from "@/store/live-events";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.03 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export function CorrelatedIncidents() {
   const [incidents, setIncidents] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string | null>(null);
+  const [source, setSource] = useState<"backend" | "local">("backend");
+  const storeEvents = useEventStore((state) => state.events);
+
+  const eventsToIncidents = useCallback((events: any[]) => {
+    return events.map((e, i) => ({
+      id: `local-${i}-${e.timestamp || Date.now()}`,
+      title: e.attack_type?.replace(/_/g, " ") || e.message?.substring(0, 60) || "Security Event",
+      severity: e.severity || "medium",
+      user: e.user || "unknown",
+      host: e.host || "unknown",
+      source_ip: e.source_ip || "",
+      mitre: e.mitre_technique || "",
+      status: "active",
+      event_count: e.event_count || 1,
+      timeline: [
+        { description: e.message || "Event detected", timestamp: e.timestamp || new Date().toISOString() }
+      ],
+      iocs: [e.source_ip, e.host, e.user].filter(Boolean),
+      timestamp: e.timestamp || new Date().toISOString(),
+    }));
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         const res = await fetch("http://localhost:8030/incidents");
+        if (cancelled) return;
         const data = await res.json();
-        setIncidents(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error(err);
+        if (Array.isArray(data) && data.length > 0) {
+          setIncidents(data);
+          setSource("backend");
+          return;
+        }
+      } catch {
+        // backend unavailable
+      }
+      if (!cancelled) {
+        const local = eventsToIncidents(storeEvents);
+        setIncidents(local);
+        setSource("local");
       }
     };
     load();
     const interval = setInterval(load, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [storeEvents, eventsToIncidents]);
 
   const filtered = incidents.filter((inc) => {
     const matchesSearch = !search || 
@@ -33,14 +82,17 @@ export function CorrelatedIncidents() {
       (inc.user || "").toLowerCase().includes(search.toLowerCase()) ||
       (inc.host || "").toLowerCase().includes(search.toLowerCase()) ||
       (inc.mitre || "").toLowerCase().includes(search.toLowerCase());
-    const matchesSeverity = !severityFilter || (inc.severity || "").toLowerCase() === severityFilter.toLowerCase();
+    const rawSev = inc.severity;
+    const sevStr = typeof rawSev === "number" ? (rawSev >= 70 ? "critical" : rawSev >= 40 ? "high" : rawSev >= 20 ? "medium" : "low") : (rawSev || "").toString().toLowerCase();
+    const matchesSeverity = !severityFilter || sevStr === severityFilter.toLowerCase();
     return matchesSearch && matchesSeverity;
   });
 
   const selected = selectedId ? incidents.find((i) => (i.id || i.title) === selectedId) : null;
 
   const severityCounts = incidents.reduce((acc: Record<string, number>, inc: any) => {
-    const sev = (inc.severity || "unknown").toLowerCase();
+    const raw = inc.severity;
+    const sev = typeof raw === "number" ? (raw >= 70 ? "critical" : raw >= 40 ? "high" : raw >= 20 ? "medium" : "low") : (raw || "unknown").toString().toLowerCase();
     acc[sev] = (acc[sev] || 0) + 1;
     return acc;
   }, {});
@@ -50,7 +102,7 @@ export function CorrelatedIncidents() {
       <div className="border-b border-zinc-800 px-6 py-4">
         <SectionHeader
           title="Incident Response"
-          subtitle={`${incidents.length} incidents • ${filtered.length} shown`}
+          subtitle={`${incidents.length} incidents • ${filtered.length} shown${source === "local" ? " • local mode" : ""}`}
           icon={
             <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -81,7 +133,6 @@ export function CorrelatedIncidents() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-          {/* Incident List */}
           <div className="xl:col-span-2">
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
               {filtered.length === 0 ? (
@@ -93,45 +144,49 @@ export function CorrelatedIncidents() {
                   <p className="text-xs text-zinc-700 mt-1">Launch attacks or upload telemetry to generate incidents</p>
                 </div>
               ) : (
-                filtered.map((incident, idx) => {
-                  const isSelected = selectedId === (incident.id || incident.title);
-                  return (
-                    <motion.button
-                      key={`${incident.id || incident.title || "incident"}-${idx}`}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      onClick={() => setSelectedId(isSelected ? null : (incident.id || incident.title))}
-                      className={`w-full text-left rounded-lg border p-4 transition-all ${
-                        isSelected
-                          ? "border-zinc-600 bg-zinc-900/80"
-                          : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <SeverityDot severity={incident.severity} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-sm font-semibold text-white truncate">
-                              {incident.title || "Untitled Incident"}
-                            </span>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-2"
+                >
+                  {filtered.map((incident, idx) => {
+                    const isSelected = selectedId === (incident.id || incident.title);
+                    return (
+                      <motion.button
+                        key={`${incident.id || incident.title || "incident"}-${idx}`}
+                        variants={itemVariants}
+                        onClick={() => setSelectedId(isSelected ? null : (incident.id || incident.title))}
+                        className={`w-full text-left rounded-lg border p-4 transition-all duration-200 ${
+                          isSelected
+                            ? "border-cyan-500/30 bg-cyan-500/5 shadow-sm shadow-cyan-500/5"
+                            : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <SeverityDot severity={incident.severity} size="md" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-white truncate">
+                                {incident.title || "Untitled Incident"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
+                              <span>{incident.user || "N/A"}</span>
+                              <span className="text-zinc-700">•</span>
+                              <span>{incident.host || "N/A"}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
-                            <span>{incident.user || "N/A"}</span>
-                            <span className="text-zinc-700">•</span>
-                            <span>{incident.host || "N/A"}</span>
-                          </div>
+                          <SeverityBadge severity={incident.severity} />
                         </div>
-                        <SeverityBadge severity={incident.severity} />
-                      </div>
-                    </motion.button>
-                  );
-                })
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
               )}
             </div>
           </div>
 
-          {/* Incident Detail */}
           <div className="xl:col-span-3">
             <AnimatePresence mode="wait">
               {selected ? (
@@ -142,7 +197,6 @@ export function CorrelatedIncidents() {
                   exit={{ opacity: 0, y: -8 }}
                   className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-6"
                 >
-                  {/* Detail Header */}
                   <div className="flex items-center gap-4 mb-6 pb-6 border-b border-zinc-800">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -176,9 +230,7 @@ export function CorrelatedIncidents() {
                     </div>
                   </div>
 
-                  {/* Detail Grid */}
                   <div className="grid grid-cols-2 gap-6">
-                    {/* Alert Details */}
                     <div>
                       <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Alert Details</h4>
                       <div className="space-y-2.5">
@@ -190,7 +242,7 @@ export function CorrelatedIncidents() {
                           { label: "Source IP", value: selected.source_ip || "N/A" },
                           { label: "Status", value: selected.status || "active" },
                         ].map((item) => (
-                          <div key={item.label} className="flex items-center justify-between rounded-md border border-zinc-800/60 bg-zinc-900/30 px-3.5 py-2">
+                          <div key={item.label} className="flex items-center justify-between rounded-md border border-zinc-800/60 bg-zinc-900/30 px-3.5 py-2 transition-colors hover:border-zinc-700/60">
                             <span className="text-[11px] text-zinc-500 font-mono">{item.label}</span>
                             <span className="text-xs font-semibold" style={item.color ? { color: item.color } : {}}>
                               {item.value}
@@ -200,13 +252,12 @@ export function CorrelatedIncidents() {
                       </div>
                     </div>
 
-                    {/* Related Alerts — IOCs */}
                     <div>
                       <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Indicators (IOCs)</h4>
                       {selected.iocs && selected.iocs.length > 0 ? (
                         <div className="space-y-2">
                           {selected.iocs.map((ioc: string, i: number) => (
-                            <div key={i} className="rounded-md border border-zinc-800/60 bg-zinc-900/30 p-3">
+                            <div key={i} className="rounded-md border border-zinc-800/60 bg-zinc-900/30 p-3 hover:border-zinc-700/60 transition-colors">
                               <p className="text-xs font-mono text-zinc-400 break-all">{ioc}</p>
                             </div>
                           ))}
@@ -219,7 +270,6 @@ export function CorrelatedIncidents() {
                     </div>
                   </div>
 
-                  {/* Timeline */}
                   {selected.timeline && selected.timeline.length > 0 && (
                     <div className="mt-6 pt-6 border-t border-zinc-800">
                       <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Timeline</h4>

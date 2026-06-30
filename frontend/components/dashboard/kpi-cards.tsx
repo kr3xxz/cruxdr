@@ -2,6 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { KPICard } from "@/components/ui/kpi-card";
+import { useEventStore } from "@/store/live-events";
+
+function sevToNum(s: any): number {
+  if (typeof s === "number") return s;
+  const str = (s || "").toString().toLowerCase();
+  if (str === "critical") return 95;
+  if (str === "high") return 70;
+  if (str === "medium") return 40;
+  if (str === "low") return 15;
+  return 0;
+}
+
+function scoreFromEvents(events: any[]) {
+  return events.reduce((score: number, e: any) => {
+    const s = sevToNum(e.severity);
+    if (s >= 70) return score + 40;
+    if (s >= 40) return score + 20;
+    if (s >= 20) return score + 10;
+    return score + 5;
+  }, 0);
+}
 
 export function KPICards() {
   const [stats, setStats] = useState({
@@ -12,27 +33,41 @@ export function KPICards() {
   });
 
   const loadStats = async () => {
+    const events = useEventStore.getState().events;
     try {
       const res = await fetch("http://localhost:8030/incidents");
       const incidents = await res.json();
 
-      const threatScore = incidents.reduce((score: number, incident: any) => {
-        const sev = (incident.severity || "").toUpperCase();
-        if (sev === "CRITICAL") return score + 40;
-        if (sev === "HIGH") return score + 20;
-        if (sev === "MEDIUM") return score + 10;
-        return score + 5;
-      }, 0);
+      if (incidents.length > 0) {
+        const threatScore = incidents.reduce((score: number, incident: any) => {
+          const sev = (incident.severity || "").toUpperCase();
+          if (sev === "CRITICAL") return score + 40;
+          if (sev === "HIGH") return score + 20;
+          if (sev === "MEDIUM") return score + 10;
+          return score + 5;
+        }, 0);
 
-      const mitre = new Set(incidents.map((i: any) => i.mitre));
-      const assets = new Set(incidents.flatMap((i: any) => [i.host, i.user]));
+        const mitre = new Set(incidents.map((i: any) => i.mitre));
+        const assets = new Set(incidents.flatMap((i: any) => [i.host, i.user]));
 
-      setStats({
-        incidents: incidents.length,
-        threatScore,
-        techniques: mitre.size,
-        assets: assets.size,
-      });
+        setStats({
+          incidents: incidents.length,
+          threatScore,
+          techniques: mitre.size,
+          assets: assets.size,
+        });
+      } else {
+        const localScore = scoreFromEvents(events);
+        const critHigh = events.filter((e: any) => sevToNum(e.severity) >= 70).length;
+        const mitre = new Set(events.map((e: any) => e.mitre_technique).filter(Boolean));
+        const assets = new Set(events.flatMap((e: any) => [e.host, e.user]).filter(Boolean));
+        setStats({
+          incidents: critHigh,
+          threatScore: localScore,
+          techniques: mitre.size,
+          assets: assets.size > 0 ? assets.size : events.length > 0 ? 1 : 0,
+        });
+      }
     } catch (err) {
       console.error("KPI ERROR", err);
     }
@@ -42,6 +77,25 @@ export function KPICards() {
     loadStats();
     const interval = setInterval(loadStats, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const unsub = useEventStore.subscribe(() => {
+      const events = useEventStore.getState().events;
+      if (events.length > 0) {
+        const localScore = scoreFromEvents(events);
+        const critHigh = events.filter((e: any) => sevToNum(e.severity) >= 70).length;
+        const mitre = new Set(events.map((e: any) => e.mitre_technique).filter(Boolean));
+        const assets = new Set(events.flatMap((e: any) => [e.host, e.user]).filter(Boolean));
+        setStats({
+          incidents: critHigh,
+          threatScore: localScore,
+          techniques: mitre.size,
+          assets: assets.size > 0 ? assets.size : events.length > 0 ? 1 : 0,
+        });
+      }
+    });
+    return unsub;
   }, []);
 
   const criticalAlerts = stats.incidents > 0 ? stats.incidents : 0;

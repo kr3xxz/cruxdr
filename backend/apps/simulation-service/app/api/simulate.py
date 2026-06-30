@@ -23,7 +23,7 @@ async def get_graph():
 def get_producer():
 
     return KafkaProducer(
-        bootstrap_servers="kafka:9092",
+        bootstrap_servers="crux-kafka:9092",
         value_serializer=lambda v:
             json.dumps(v).encode("utf-8")
     )
@@ -161,16 +161,13 @@ async def send_logs(logs, attack_type=None):
         if "technique_id" in log and "mitre_technique" not in log:
             log["mitre_technique"] = log["technique_id"]
 
-    producer = get_producer()
-
-    for log in logs:
-
-        producer.send(
-            "cruxdr-logs",
-            log
-        )
-
-    producer.flush()
+    try:
+        producer = get_producer()
+        for log in logs:
+            producer.send("cruxdr-logs", log)
+        producer.flush(timeout=5)
+    except Exception as e:
+        print(f"[KAFKA ERROR] {e}", flush=True)
 
     if logs and attack_type:
         summary = build_summary_event(logs, attack_type)
@@ -189,6 +186,29 @@ async def send_logs(logs, attack_type=None):
             )
     except Exception as e:
         print(f"[INGEST ERROR] {e}", flush=True)
+
+    if logs and attack_type:
+        first = logs[0]
+        max_sev = max(log.get("severity", 0) for log in logs)
+        hosts = list({log.get("host", "") for log in logs if log.get("host")})
+        users = list({log.get("username", "") for log in logs if log.get("username")})
+        incident = {
+            "title": f"{attack_type.replace('_', ' ').title()} Attack",
+            "severity": "critical" if max_sev >= 80 else "high" if max_sev >= 50 else "medium",
+            "host": hosts[0] if hosts else first.get("host", "unknown"),
+            "user": users[0] if users else first.get("username", "unknown"),
+            "mitre": first.get("mitre_technique", first.get("technique_id", "")),
+            "timeline": [{"step": "Detection", "description": first.get("message", f"{attack_type} detected")}],
+            "iocs": [first.get("source_ip", "N/A"), first.get("dest_ip", "N/A"), first.get("host", "N/A")],
+        }
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                await client.post(
+                    "http://correlation-service:8000/incidents",
+                    json=incident,
+                )
+        except Exception as e:
+            print(f"[INCIDENT PUSH ERROR] {e}", flush=True)
 
     context = {"status": "success", "logs_generated": len(logs)}
     if logs and attack_type:

@@ -23,7 +23,7 @@ async def launch_attack(
     )
 
     producer.send(
-        "siem-events",
+        "cruxdr-logs",
         attack,
     )
 

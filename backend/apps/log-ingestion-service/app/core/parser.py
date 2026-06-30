@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 
 ECS_EVENT_TYPE_MAP = {
@@ -83,7 +84,7 @@ def parse_logs(raw_logs: str):
                 "dns_query": parsed.get("dns", {}).get("query", ""),
                 "command_line": parsed.get("command_line", "") or parsed.get("process", {}).get("command_line", ""),
                 "message": parsed.get("message", ""),
-                "timestamp": parsed.get("ts", ""),
+                "timestamp": parsed.get("ts") or datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "raw": raw_str,
             }
             events.append(event)

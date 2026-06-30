@@ -154,27 +154,40 @@ async def search_logs(
     q: str
 ):
 
-    result = client.search(
+    ql = q.lower()
+    results = [
+        ev for ev in EVENTS
+        if ql in str(ev.get("source_ip", "")).lower()
+        or ql in str(ev.get("host", "")).lower()
+        or ql in str(ev.get("username", "")).lower()
+        or ql in str(ev.get("message", "")).lower()
+        or ql in str(ev.get("event_type", "")).lower()
+        or ql in str(ev.get("raw", "")).lower()
+    ]
 
-        index=INDEX_NAME,
+    if results:
+        return results
 
-        body={
-            "query": {
-                "multi_match": {
-                    "query": q,
-
-                    "fields": [
-                        "event_type",
-                        "source_ip",
-                        "username",
-                        "raw",
-                    ]
+    try:
+        result = client.search(
+            index=INDEX_NAME,
+            body={
+                "query": {
+                    "multi_match": {
+                        "query": q,
+                        "fields": [
+                            "event_type",
+                            "source_ip",
+                            "username",
+                            "raw",
+                        ]
+                    }
                 }
             }
-        }
-    )
-
-    return [
-        hit["_source"]
-        for hit in result["hits"]["hits"]
-    ]
+        )
+        return [
+            hit["_source"]
+            for hit in result["hits"]["hits"]
+        ]
+    except Exception:
+        return []

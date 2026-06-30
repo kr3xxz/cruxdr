@@ -106,18 +106,27 @@ class IncidentProcessor:
                                 (
                                     alert.get("destination_ip")
                                     or alert.get("event", {}).get("destination_ip")
+                                    or alert.get("event", {}).get("dest_ip")
                                     or "N/A"
                                 ),
                             ],
                         }
 
-                        incidents_store.append(
-                            incident
+                        exists = any(
+                            x.get("title") == incident["title"]
+                            and x.get("host") == incident["host"]
+                            and x.get("user") == incident["user"]
+                            for x in incidents_store
                         )
 
-                        incidents_store[:] = (
-                            incidents_store[-100:]
-                        )
+                        if not exists:
+                            incidents_store.append(
+                                incident
+                            )
+
+                            incidents_store[:] = (
+                                incidents_store[-100:]
+                            )
 
                         try:
 

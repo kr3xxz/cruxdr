@@ -1,0 +1,26 @@
+title: Event Log Clearing via wevtutil.exe
+id: d6e7f8a9-b0c1-4d2e-8f3a-4b5c6d7e8f16
+status: stable
+description: Detects Windows Event Log clearing using wevtutil.exe utility. Attackers clear security and system logs to destroy forensic evidence of their activity and evade detection.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1070/001/
+tags:
+  - attack.defense-evasion
+  - attack.t1070.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    event_type: "defense_evasion"
+    process.name: "wevtutil.exe"
+    process.command_line: "contains|wevtutil.exe cl|clear-log"
+  condition: selection
+falsepositives:
+  - IT operations clearing logs for disk space maintenance
+  - Automated log rotation scripts configured by system administrators
+level: critical
+mitre:
+  technique: T1070.001

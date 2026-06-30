@@ -15,7 +15,7 @@ class LogGenerator:
                host="", host_ip="", source_ip="", dest_ip="", dest_port=0,
                registry_path="", registry_value="", registry_data="",
                file_name="", file_path="", dns_query="", command_line=""):
-        ts = str(datetime.utcnow())
+        ts = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         raw_fields = {
             "ts": ts,
             "event_type": event_type,

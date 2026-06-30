@@ -11,9 +11,9 @@ interface SearchInputProps {
 
 export function SearchInput({ value, onChange, placeholder = "Search...", className }: SearchInputProps) {
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative group", className)}>
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500"
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500 group-focus-within:text-zinc-400 transition-colors duration-200"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -26,7 +26,7 @@ export function SearchInput({ value, onChange, placeholder = "Search...", classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 transition-colors focus:border-zinc-600 focus:bg-zinc-900 focus:outline-none"
+        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 py-2 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 transition-all duration-200 focus:border-cyan-500/40 focus:bg-zinc-900/80 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 group-hover:border-zinc-700"
       />
     </div>
   );
@@ -44,9 +44,9 @@ export function FilterButton({ label, active, onClick, count }: FilterButtonProp
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold font-mono transition-all",
+        "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold font-mono transition-all duration-200",
         active
-          ? "border-zinc-600 bg-zinc-800/60 text-zinc-200"
+          ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-sm shadow-cyan-500/5"
           : "border-zinc-800 bg-transparent text-zinc-500 hover:border-zinc-700 hover:text-zinc-400"
       )}
     >
@@ -54,7 +54,7 @@ export function FilterButton({ label, active, onClick, count }: FilterButtonProp
       {count !== undefined && (
         <span className={cn(
           "ml-1 rounded px-1 py-0.5 text-[10px]",
-          active ? "bg-zinc-700 text-zinc-300" : "bg-zinc-800/60 text-zinc-600"
+          active ? "bg-cyan-500/20 text-cyan-400" : "bg-zinc-800/60 text-zinc-600"
         )}>
           {count}
         </span>

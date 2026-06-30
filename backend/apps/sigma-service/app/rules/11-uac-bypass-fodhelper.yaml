@@ -1,0 +1,26 @@
+title: UAC Bypass via Fodhelper.exe Registry Manipulation
+id: e1f2a3b4-c5d6-4e7f-8a8b-9c0d1e2f3a11
+status: stable
+description: Detects registry modification used for fodhelper.exe UAC bypass technique. Attackers modify HKCU\\Software\\Classes\\ms-settings to execute arbitrary code with elevated privileges without UAC prompt.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1548/002/
+tags:
+  - attack.privilege-escalation
+  - attack.t1548.002
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  selection:
+    event_type: "privilege_escalation"
+    category: "registry"
+    registry.path: "ms-settings\\shell\\open\\command"
+  condition: selection
+falsepositives:
+  - Software installers modifying default application protocol handlers
+  - System administrators testing UAC bypass mitigations
+level: high
+mitre:
+  technique: T1548.002

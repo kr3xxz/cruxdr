@@ -15,13 +15,13 @@ interface KPICardProps {
   delay?: number;
 }
 
-const colorStyles: Record<string, { value: string; accent: string; glow: string }> = {
-  critical: { value: "text-red-400", accent: "bg-red-500/20", glow: "group-hover:shadow-red-500/5" },
-  high: { value: "text-orange-400", accent: "bg-orange-500/20", glow: "group-hover:shadow-orange-500/5" },
-  medium: { value: "text-yellow-400", accent: "bg-yellow-500/20", glow: "group-hover:shadow-yellow-500/5" },
-  low: { value: "text-blue-400", accent: "bg-blue-500/20", glow: "group-hover:shadow-blue-500/5" },
-  info: { value: "text-zinc-400", accent: "bg-zinc-500/20", glow: "group-hover:shadow-zinc-500/5" },
-  primary: { value: "text-cyan-400", accent: "bg-cyan-500/20", glow: "group-hover:shadow-cyan-500/5" },
+const colorStyles: Record<string, { value: string; accent: string; glow: string; gradient: string }> = {
+  critical: { value: "text-fuchsia-400", accent: "bg-fuchsia-500/20", glow: "group-hover:shadow-fuchsia-500/10", gradient: "from-fuchsia-500/5 via-transparent to-transparent" },
+  high: { value: "text-rose-400", accent: "bg-rose-500/20", glow: "group-hover:shadow-rose-500/10", gradient: "from-rose-500/5 via-transparent to-transparent" },
+  medium: { value: "text-amber-400", accent: "bg-amber-500/20", glow: "group-hover:shadow-amber-500/10", gradient: "from-amber-500/5 via-transparent to-transparent" },
+  low: { value: "text-cyan-400", accent: "bg-cyan-500/20", glow: "group-hover:shadow-cyan-500/10", gradient: "from-cyan-500/5 via-transparent to-transparent" },
+  info: { value: "text-zinc-400", accent: "bg-zinc-500/20", glow: "group-hover:shadow-zinc-500/5", gradient: "from-zinc-500/5 via-transparent to-transparent" },
+  primary: { value: "text-violet-400", accent: "bg-violet-500/20", glow: "group-hover:shadow-violet-500/10", gradient: "from-violet-500/5 via-transparent to-transparent" },
 };
 
 function AnimatedValue({ value, className }: { value: string | number; className: string }) {
@@ -56,6 +56,10 @@ export function KPICard({ title, value, subtitle, icon, trend, color = "info", c
         className
       )}
     >
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
+        colors.gradient
+      )} />
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
       <div className="flex items-start justify-between relative z-[1]">
         <div className="flex-1 min-w-0">
@@ -69,10 +73,16 @@ export function KPICard({ title, value, subtitle, icon, trend, color = "info", c
           <div className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg relative overflow-hidden",
             colors.accent,
-            "ring-1 ring-inset ring-white/5"
+            "ring-1 ring-inset ring-white/5 group-hover:ring-white/10 transition-all duration-300"
           )}>
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] to-transparent" />
-            <span className="relative">{icon}</span>
+            <motion.span
+              className="relative"
+              whileHover={{ scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            >
+              {icon}
+            </motion.span>
           </div>
         )}
       </div>
@@ -101,9 +111,9 @@ interface MetricRowProps {
 
 export function MetricRow({ label, value, color }: MetricRowProps) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-zinc-800/50 bg-zinc-900/30 px-3.5 py-2 transition-colors hover:border-zinc-700/50 hover:bg-zinc-900/50">
+    <div className="flex items-center justify-between rounded-lg border border-zinc-800/50 bg-zinc-900/30 px-3.5 py-2 transition-all duration-200 hover:border-zinc-700/50 hover:bg-zinc-900/50 group">
       <span className="text-xs text-zinc-500 font-mono tracking-wide">{label}</span>
-      <span className={cn("text-sm font-bold font-mono tabular-nums", color || "text-zinc-100")}>{value}</span>
+      <span className={cn("text-sm font-bold font-mono tabular-nums transition-colors duration-200", color || "text-zinc-100 group-hover:text-zinc-50")}>{value}</span>
     </div>
   );
 }

@@ -1,0 +1,27 @@
+title: DLL Search Order Hijacking Detection
+id: a3b4c5d6-e7f8-4a9b-8c0d-1e2f3a4b5c13
+status: stable
+description: Detects DLLs loaded from non-standard paths that may indicate search order hijacking. Attackers place malicious DLLs in user-writable directories to hijack legitimate process load orders.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1574/001/
+tags:
+  - attack.privilege-escalation
+  - attack.t1574.001
+logsource:
+  category: image_load
+  product: windows
+detection:
+  selection:
+    event_type: "privilege_escalation"
+    category: "library"
+    file.name: "*.dll"
+    file.path: "contains|Users|public|AppData|Temp"
+  condition: selection
+falsepositives:
+  - Applications bundling custom DLL versions for backward compatibility
+  - Approved software sideloading vendor DLLs for plugin architecture
+level: high
+mitre:
+  technique: T1574.001

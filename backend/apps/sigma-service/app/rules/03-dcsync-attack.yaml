@@ -1,0 +1,28 @@
+title: DCSync Attack via Mimikatz
+id: c3d4e5f6-a7b8-4c9d-8e0f-1a2b3c4d5e03
+status: stable
+description: Detects DCSync attack via mimikatz lsadump::dsync technique. Attackers impersonate a domain controller to replicate user credential data via MS-DRSR protocol.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1003/003/
+tags:
+  - attack.credential-access
+  - attack.t1003.003
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection1:
+    event_type: "credential_access"
+    process.name: "mimikatz.exe"
+  selection2:
+    event_type: "credential_access"
+    action: "directory_service_access"
+  condition: selection1 or selection2
+falsepositives:
+  - Authorized red team engagements with explicit CISO approval
+  - Domain controller replication troubleshooting by domain admins
+level: critical
+mitre:
+  technique: T1003.003

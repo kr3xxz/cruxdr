@@ -1,0 +1,27 @@
+title: Local Admin Account Creation via Net.EXE
+id: test-local-admin-creation
+status: test
+description: Detects creation of local admin accounts using net.exe or net1.exe (MITRE T1136.001). This is NOT hardcoded in the detection engine — purely sigma-driven.
+author: CruXDR Test
+date: 2026-06-29
+tags:
+  - attack.persistence
+  - attack.t1136.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  sel_name:
+    event_type: "execution"
+    process.name: "contains|net.exe|net1.exe"
+  sel_user:
+    process.command_line: "contains|user"
+  sel_add:
+    process.command_line: "contains|/add"
+  condition: sel_name and sel_user and sel_add
+falsepositives:
+  - Legitimate IT admin creating approved accounts
+level: high
+mitre:
+  technique: T1136.001
+  tactic: Persistence

@@ -1,13 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SectionHeader } from "@/components/ui/section-header";
 import { SearchInput } from "@/components/ui/search-input";
+import { SeverityBadge } from "@/components/ui/severity-badge";
+import { cn } from "@/lib/utils";
+
+function formatTimestamp(ts: string | undefined) {
+  if (!ts) return "";
+  try {
+    const d = new Date(ts);
+    return d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch {
+    return ts;
+  }
+}
 
 export default function LogExplorer() {
   const [logs, setLogs] = useState<any[]>([]);
   const [query, setQuery] = useState("");
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [severityFilter, setSeverityFilter] = useState<string | null>(null);
 
   const fetchLogs = async () => {
     let url = "http://localhost:8080/logs";
@@ -32,79 +46,176 @@ export default function LogExplorer() {
     return () => clearInterval(interval);
   }, [query]);
 
+  const filtered = severityFilter
+    ? logs.filter((log) => (log.severity || "info").toLowerCase() === severityFilter.toLowerCase())
+    : logs;
+
+  const severityCounts = logs.reduce((acc: Record<string, number>, log: any) => {
+    const sev = (log.severity || "info").toLowerCase();
+    acc[sev] = (acc[sev] || 0) + 1;
+    return acc;
+  }, {});
+
+  const getEventTypeColor = (type: string | undefined) => {
+    const colors: Record<string, string> = {
+      alert: "border-l-fuchsia-500/60",
+      warning: "border-l-amber-500/60",
+      info: "border-l-cyan-500/40",
+      error: "border-l-rose-500/60",
+      critical: "border-l-fuchsia-500/80",
+    };
+    return colors[(type || "").toLowerCase()] || "border-l-zinc-600/30";
+  };
+
   return (
-    <div className="glass-panel rounded-xl overflow-hidden">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+    <div>
+      <div className="flex items-center justify-between mb-4">
         <SectionHeader
-          title="SIEM Telemetry Explorer"
-          subtitle="Search and browse security events"
+          title="Log Explorer"
+          subtitle={`${logs.length} events • ${filtered.length} shown`}
           icon={
-            <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            <svg className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
             </svg>
           }
+          action={
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              placeholder="Search logs..."
+              className="w-64"
+            />
+          }
         />
-        <div className="flex items-center gap-2">
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] text-zinc-500 font-mono">{logs.length} events</span>
-        </div>
       </div>
-      <div className="p-5">
-        <SearchInput
-          value={query}
-          onChange={setQuery}
-          placeholder="Search telemetry by event type, IP, user..."
-          className="mb-5"
-        />
-        <div className="space-y-2 max-h-[500px] overflow-y-auto">
-          {logs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <svg className="h-10 w-10 text-zinc-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
-              </svg>
-              <p className="text-sm text-zinc-600">No telemetry data available</p>
-              <p className="text-xs text-zinc-700 mt-1">Upload logs or launch attacks to populate the event stream</p>
-            </div>
-          ) : (
-            logs.map((log, idx) => {
-              const norm = (s: any) => typeof s === "number" ? (s >= 70 ? "critical" : s >= 40 ? "high" : s >= 20 ? "medium" : "low") : (s || "").toString().toLowerCase();
-              const isCritical = norm(log.severity) === "critical" || norm(log.severity) === "high";
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.02 }}
-                  className={`rounded-lg border ${isCritical ? "border-red-900/20 bg-red-950/15" : "border-zinc-800 bg-zinc-900/40"} p-4 hover:bg-zinc-900/60 transition-colors`}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-bold font-mono uppercase tracking-wider ${isCritical ? "text-red-400" : "text-cyan-400"}`}>
-                        {log.attack_type || log.event_type}
-                      </span>
-                      {log.severity && (
-                        <span className={`text-[10px] font-mono ${isCritical ? "text-red-500" : "text-zinc-600"}`}>
-                          {log.severity}
-                        </span>
-                      )}
-                    </div>
-                    {log.source_ip && (
-                      <span className="text-[10px] text-zinc-500 font-mono shrink-0">{log.source_ip}</span>
-                    )}
-                  </div>
-                  {(log.username || log.user) && (
-                    <div className="text-xs text-zinc-300 mb-2">
-                      User: <span className="font-mono text-zinc-400">{log.username || log.user}</span>
-                    </div>
+
+      <div className="flex items-center gap-2 mb-4">
+        {["critical", "high", "medium", "info"].map((sev) => (
+          <button
+            key={sev}
+            onClick={() => setSeverityFilter(severityFilter === sev ? null : sev)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider transition-all duration-200",
+              severityFilter === sev
+                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300 shadow-[0_0_8px] shadow-cyan-500/20"
+                : "border-zinc-700/40 text-zinc-500 hover:border-zinc-600/60 hover:text-zinc-300"
+            )}
+          >
+            {sev}
+            {severityCounts[sev] > 0 && (
+              <span className="tabular-nums opacity-60">{severityCounts[sev]}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-1.5 max-h-[500px] overflow-y-auto custom-scrollbar">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <svg className="h-8 w-8 text-zinc-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <p className="text-xs text-zinc-600 font-mono">No log events found</p>
+          </div>
+        ) : (
+          filtered.slice(0, 200).map((log: any, idx: number) => {
+            const isExpanded = expandedIdx === idx;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.003 }}
+              >
+                <button
+                  onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                  className={cn(
+                    "w-full text-left rounded-lg border px-4 py-2.5 font-mono text-[11px] transition-all duration-200 border-l-4",
+                    isExpanded
+                      ? "border-zinc-700/60 bg-zinc-800/30 border-l-cyan-400/60"
+                      : "border-zinc-800/40 bg-zinc-900/20 hover:bg-zinc-900/40 hover:border-zinc-700/50",
+                    getEventTypeColor(log.event_type)
                   )}
-                  <div className="text-[11px] text-zinc-600 break-all font-mono leading-relaxed">
-                    {log.raw || log.message}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={cn(
+                      "shrink-0 font-semibold tracking-wide",
+                      log.severity === "critical" || log.severity === "high"
+                        ? "text-fuchsia-400"
+                        : log.severity === "medium"
+                        ? "text-amber-400"
+                        : "text-cyan-400"
+                    )}>
+                      [{log.event_type || "event"}]
+                    </span>
+                    <span className="shrink-0 text-zinc-600 tabular-nums w-16">
+                      {formatTimestamp(log.timestamp)}
+                    </span>
+                    <span className="flex-1 truncate text-zinc-400">
+                      {log.raw || log.message || JSON.stringify(log)}
+                    </span>
+                    {log.severity && (
+                      <SeverityBadge severity={log.severity} size="sm" className="shrink-0" />
+                    )}
+                    <svg
+                      className={cn(
+                        "h-3 w-3 shrink-0 text-zinc-600 transition-transform duration-200",
+                        isExpanded && "rotate-180"
+                      )}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
                   </div>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
+                </button>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mx-4 mb-2 rounded-b-lg border-x border-b border-zinc-800/40 bg-zinc-900/20 p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: "Event Type", value: log.event_type || "—" },
+                            { label: "Severity", value: log.severity || "—" },
+                            { label: "Timestamp", value: log.timestamp || "—" },
+                            { label: "Source IP", value: log.source_ip || "—" },
+                            { label: "Host", value: log.host || "—" },
+                            { label: "User", value: log.user || "—" },
+                            { label: "Attack Type", value: log.attack_type || "—" },
+                            { label: "MITRE Technique", value: log.mitre_technique || "—" },
+                          ].map((field) => (
+                            <div key={field.label} className="flex flex-col gap-0.5">
+                              <span className="text-[10px] text-zinc-600 uppercase tracking-wider">{field.label}</span>
+                              <span className="text-xs text-zinc-300 font-mono break-all">{field.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {log.message && (
+                          <div className="mt-3 pt-3 border-t border-zinc-800/40">
+                            <span className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Message</span>
+                            <p className="text-xs text-zinc-300 font-mono">{log.message}</p>
+                          </div>
+                        )}
+                        {log.raw && log.raw !== log.message && (
+                          <div className="mt-3 pt-3 border-t border-zinc-800/40">
+                            <span className="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">Raw</span>
+                            <pre className="text-[10px] text-zinc-500 font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+                              {log.raw}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })
+        )}
       </div>
     </div>
   );

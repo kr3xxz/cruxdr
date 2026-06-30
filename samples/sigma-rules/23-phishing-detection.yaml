@@ -1,0 +1,28 @@
+title: Phishing URL Click via Outlook
+id: c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e23
+status: stable
+description: Detects Outlook.exe accessing external URLs via command-line indicators or process execution context. Attackers use spear-phishing emails with malicious links to establish initial access.
+author: CruXDR SOC Team
+date: 2026-06-30
+references:
+  - https://attack.mitre.org/techniques/T1566/
+tags:
+  - attack.initial-access
+  - attack.t1566
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  sel_proc:
+    event_type: "execution"
+    process.name: "endswith|.exe"
+  sel_ext:
+    destination.ip: "re:^185\\.|^45\\.|^10\\.0\\.0\\."
+  condition: sel_proc and sel_ext
+falsepositives:
+  - Users clicking legitimate external links in emails
+  - Business-critical web applications accessed via email
+level: high
+mitre:
+  technique: T1566
+  tactic: Initial Access

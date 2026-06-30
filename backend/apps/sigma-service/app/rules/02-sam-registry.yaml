@@ -1,0 +1,26 @@
+title: SAM Registry Access via reg.exe
+id: b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d02
+status: stable
+description: Detects access to the SAM registry hive via reg.exe for password hash extraction. Querying HKLM\\SAM\\SAM is a well-known technique to obtain password hashes for offline cracking.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1003/002/
+tags:
+  - attack.credential-access
+  - attack.t1003.002
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  selection:
+    event_type: "credential_access"
+    category: "registry"
+    registry.path: "HKLM\\SAM\\SAM"
+  condition: selection
+falsepositives:
+  - Legitimate SAM registry queries by security audit tools
+  - Backup software accessing SAM for system state backup
+level: critical
+mitre:
+  technique: T1003.002

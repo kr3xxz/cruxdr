@@ -12,6 +12,30 @@ def generate_phishing():
         "severity":
         "medium",
 
+        "event_type":
+        "execution",
+
+        "category":
+        "process",
+
+        "action":
+        "url_click",
+
+        "process_name":
+        "outlook.exe",
+
+        "host":
+        fake.hostname(),
+
+        "source_ip":
+        "10.0.0.50",
+
+        "dest_ip":
+        "185.220.101.20",
+
+        "dest_port":
+        443,
+
         "sender":
         fake.email(),
 

@@ -43,6 +43,7 @@ class UEBAEngine:
         if user not in user_profiles:
             user_profiles[user] = []
 
+        event["_ts"] = event.get("_ts", time.time())
         user_profiles[user].append(event)
         user_profiles[user] = user_profiles[user][-50:]
 
@@ -75,7 +76,7 @@ class UEBAEngine:
 
         timestamp = event.get(
             "timestamp",
-            str(datetime.utcnow()),
+            datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         )
 
         risk_entry = {

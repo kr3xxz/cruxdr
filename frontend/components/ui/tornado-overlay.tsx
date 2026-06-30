@@ -19,20 +19,16 @@ interface SuckLine {
   length: number;
 }
 
-export function TornadoOverlay({
-  onComplete,
-}: {
-  onComplete: () => void;
-}) {
+export function TornadoOverlay({ onComplete }: { onComplete: () => void }) {
   const debris = useMemo<Debris[]>(
     () =>
-      Array.from({ length: 40 }, (_, i) => ({
+      Array.from({ length: 60 }, (_, i) => ({
         x: Math.random() * 100,
         y: Math.random() * 100,
         size: 2 + Math.random() * 6,
         delay: Math.random() * 0.8,
         duration: 1 + Math.random() * 1.2,
-        drift: (Math.random() - 0.5) * 40,
+        drift: (Math.random() - 0.5) * 60,
         color: [
           "bg-cyan-400/60",
           "bg-amber-500/50",
@@ -41,17 +37,19 @@ export function TornadoOverlay({
           "bg-zinc-300/60",
           "bg-emerald-400/50",
           "bg-blue-400/50",
-        ][i % 7],
+          "bg-fuchsia-400/50",
+          "bg-rose-400/50",
+        ][i % 9],
       })),
     []
   );
 
   const suckLines = useMemo<SuckLine[]>(
     () =>
-      Array.from({ length: 16 }, (_, i) => ({
-        angle: (i / 16) * 360,
+      Array.from({ length: 24 }, (_, i) => ({
+        angle: (i / 24) * 360,
         delay: 0.3 + Math.random() * 1.0,
-        length: 20 + Math.random() * 40,
+        length: 20 + Math.random() * 50,
       })),
     []
   );
@@ -63,210 +61,163 @@ export function TornadoOverlay({
 
   return (
     <motion.div
-      className="fixed inset-0 z-[9999] overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden pointer-events-none"
+      initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
+      style={{ perspective: "800px" }}
     >
-      <style>{`
-        @keyframes tornado-spin {
-          0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.6); opacity: 0; }
-          15% { opacity: 1; }
-          50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); }
-          100% { transform: translate(-50%, -50%) rotate(360deg) scale(1.4); opacity: 0.8; }
-        }
-        @keyframes funnel-pulse {
-          0%, 100% { transform: scaleY(1) scaleX(1); }
-          50% { transform: scaleY(1.08) scaleX(0.95); }
-        }
-        @keyframes suck-in {
-          0% { transform: translate(var(--start-x), var(--start-y)) scale(1); opacity: 0.6; }
-          60% { opacity: 0.8; }
-          100% { transform: translate(0, 0) scale(0); opacity: 0; }
-        }
-        @keyframes cloud-roll {
-          0% { transform: translateX(0) scale(1); opacity: 0; }
-          10% { opacity: 0.5; }
-          90% { opacity: 0.5; }
-          100% { transform: translateX(80px) scale(1.3); opacity: 0; }
-        }
-        @keyframes flash {
-          0%, 100% { opacity: 0; }
-          5% { opacity: 0.6; }
-          6% { opacity: 0; }
-          7% { opacity: 0.3; }
-          8% { opacity: 0; }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translate(0, 0); }
-          10% { transform: translate(-4px, 2px); }
-          20% { transform: translate(3px, -3px); }
-          30% { transform: translate(-2px, 4px); }
-          40% { transform: translate(5px, -1px); }
-          50% { transform: translate(-3px, 2px); }
-          60% { transform: translate(2px, -4px); }
-          70% { transform: translate(-5px, 3px); }
-          80% { transform: translate(4px, -2px); }
-          90% { transform: translate(-1px, 5px); }
-        }
-        @keyframes debris-orbit {
-          0% { transform: rotate(var(--start-angle)) translateX(calc(var(--orbit-radius) * 1px)) rotate(0deg); opacity: 0; }
-          10% { opacity: 1; }
-          100% { transform: rotate(calc(var(--start-angle) + 720deg)) translateX(0px) rotate(-360deg); opacity: 0; }
-        }
-        .tornado-container {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          animation: tornado-spin 2.5s ease-in-out forwards;
-          transform-origin: center center;
-        }
-        .tornado-funnel {
-          position: relative;
-          width: 60px;
-          height: 400px;
-          animation: funnel-pulse 0.6s ease-in-out infinite;
-        }
-        .funnel-layer {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-          border-radius: 50%;
-          border: 2px solid rgba(6, 182, 212, 0.3);
-          background: radial-gradient(
-            ellipse at center,
-            rgba(6, 182, 212, 0.15) 0%,
-            rgba(103, 232, 249, 0.08) 40%,
-            transparent 70%
-          );
-          box-shadow: 0 0 30px rgba(6, 182, 212, 0.1);
-        }
-        .funnel-layer:nth-child(1) { bottom: 0%; width: 20px; height: 8px; }
-        .funnel-layer:nth-child(2) { bottom: 8%; width: 40px; height: 12px; }
-        .funnel-layer:nth-child(3) { bottom: 16%; width: 65px; height: 16px; }
-        .funnel-layer:nth-child(4) { bottom: 24%; width: 90px; height: 20px; }
-        .funnel-layer:nth-child(5) { bottom: 32%; width: 110px; height: 24px; }
-        .funnel-layer:nth-child(6) { bottom: 40%; width: 135px; height: 28px; }
-        .funnel-layer:nth-child(7) { bottom: 48%; width: 155px; height: 30px; }
-        .funnel-layer:nth-child(8) { bottom: 56%; width: 175px; height: 32px; }
-        .funnel-layer:nth-child(9) { bottom: 64%; width: 190px; height: 34px; }
-        .funnel-layer:nth-child(10) { bottom: 72%; width: 200px; height: 36px; }
-        .funnel-layer:nth-child(11) { bottom: 80%; width: 180px; height: 40px; }
-        .funnel-layer:nth-child(12) { bottom: 88%; width: 140px; height: 50px; }
-        .funnel-layer:nth-child(13) { bottom: 96%; width: 80px; height: 60px; }
-        .debris-particle {
-          position: absolute;
-          border-radius: 2px;
-          animation: debris-orbit var(--duration) ease-in-out var(--delay) forwards;
-          --start-angle: ${Math.random() * 360}deg;
-          --orbit-radius: ${60 + Math.random() * 180};
-        }
-        .suck-line {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: var(--length);
-          height: 1.5px;
-          background: linear-gradient(90deg, rgba(6, 182, 212, 0.4), transparent);
-          transform-origin: left center;
-          transform: rotate(calc(var(--angle) * 1deg));
-          animation: suck-in 1.2s ease-in var(--delay) forwards;
-        }
-        .cloud-mass {
-          position: absolute;
-          top: 5%;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 300px;
-          height: 80px;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(30, 30, 50, 0.6) 0%,
-            rgba(20, 20, 40, 0.4) 40%,
-            transparent 70%
-          );
-          border-radius: 50%;
-          animation: cloud-roll 2.5s ease-in-out forwards;
-        }
-        .flash-overlay {
-          position: absolute;
-          inset: 0;
-          background: white;
-          animation: flash 2.5s ease-in-out forwards;
-          pointer-events: none;
-        }
-        .clear-text {
-          position: absolute;
-          bottom: 20%;
-          left: 50%;
-          transform: translateX(-50%);
-          font-family: monospace;
-          font-size: 14px;
-          letter-spacing: 0.3em;
-          color: rgba(6, 182, 212, 0.6);
-          animation: fade-pulse 1.5s ease-in-out forwards;
-        }
-        @keyframes fade-pulse {
-          0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
-          30% { opacity: 1; transform: translateX(-50%) scale(1); }
-          70% { opacity: 1; }
-          100% { opacity: 0; transform: translateX(-50%) scale(0.9); }
-        }
-      `}</style>
+      {[0, 1, 2, 3].map((layer) => (
+        <motion.div
+          key={layer}
+          className="absolute"
+          style={{
+            width: `${60 - layer * 10}vh`,
+            height: `${60 - layer * 10}vh`,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            borderRadius: "50%",
+            background: `radial-gradient(ellipse, oklch(0.4 0.2 260 / ${0.04 - layer * 0.008}) 0%, transparent 70%)`,
+            border: `1px solid oklch(0.5 0.2 260 / ${0.03 - layer * 0.005})`,
+          }}
+          initial={{ scale: 0, rotate: 0, opacity: 0 }}
+          animate={{
+            scale: [0, 1.1, 0.9, 1],
+            rotate: [0, 180, 360],
+            opacity: [0, 0.8, 0.6, 0.4],
+          }}
+          transition={{
+            duration: 2.8,
+            delay: layer * 0.08,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
 
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <motion.div
+        className="absolute"
+        style={{
+          width: "30vh",
+          height: "80vh",
+          top: "10%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "linear-gradient(180deg, transparent 0%, oklch(0.45 0.2 260 / 0.06) 30%, oklch(0.5 0.2 260 / 0.08) 50%, oklch(0.45 0.2 260 / 0.06) 70%, transparent 100%)",
+          clipPath: "polygon(45% 0%, 55% 0%, 70% 20%, 75% 35%, 65% 50%, 72% 65%, 68% 80%, 55% 100%, 45% 100%, 32% 80%, 28% 65%, 35% 50%, 25% 35%, 30% 20%)",
+          filter: "blur(4px)",
+        }}
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{
+          scaleY: [0, 1, 0.8, 1.1, 0.9],
+          opacity: [0, 1, 0.8, 1, 0.9],
+          x: [0, -20, 15, -10, 0],
+        }}
+        transition={{ duration: 2.8, ease: "easeInOut" }}
+      />
 
-      <div className="flash-overlay" />
+      <motion.div
+        className="absolute"
+        style={{
+          width: "35vh",
+          height: "35vh",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, oklch(0.55 0.25 260 / 0.08) 0%, oklch(0.5 0.2 260 / 0.03) 40%, transparent 70%)",
+          filter: "blur(8px)",
+        }}
+        initial={{ scale: 0 }}
+        animate={{
+          scale: [0, 1.5, 0.8, 1.2, 0],
+          opacity: [0, 0.6, 0.4, 0.5, 0],
+        }}
+        transition={{ duration: 2.8, ease: "easeInOut" }}
+      />
 
-      <div className="absolute inset-0 animate-[shake_0.8s_ease-in-out_0.3s]" />
-
-      <div className="cloud-mass" />
-
-      <div className="tornado-container">
-        <div className="tornado-funnel">
-          {Array.from({ length: 13 }, (_, i) => (
-            <div key={i} className="funnel-layer" style={{ animationDelay: `${i * 0.05}s` }} />
-          ))}
-        </div>
-      </div>
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at center, white 0%, transparent 60%)",
+          opacity: 0.15,
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.15, 0] }}
+        transition={{ duration: 2.8, ease: "easeInOut" }}
+      />
 
       {debris.map((d, i) => (
-        <div
-          key={i}
-          className={`debris-particle ${d.color}`}
-          style={
-            {
-              top: `${d.y}%`,
-              left: `${d.x}%`,
-              width: d.size,
-              height: d.size,
-              "--delay": `${d.delay}s`,
-              "--duration": `${d.duration}s`,
-              "--start-angle": `${Math.random() * 360}deg`,
-              "--orbit-radius": `${60 + Math.random() * 180}`,
-            } as React.CSSProperties
-          }
+        <motion.div
+          key={`debris-${i}`}
+          className={`absolute rounded-full ${d.color}`}
+          style={{
+            width: d.size,
+            height: d.size,
+            top: `${d.y}%`,
+            left: `${d.x}%`,
+          }}
+          initial={{ x: 0, y: 0, opacity: 0 }}
+          animate={{
+            x: [0, (50 - d.x) * 2 + d.drift, (50 - d.x) * 3 + d.drift * 1.5],
+            y: [0, (50 - d.y) * 2, (50 - d.y) * 3 + 20],
+            opacity: [0, 1, 0],
+            scale: [1, 0.5, 0.2],
+            rotate: [0, 720 + Math.random() * 360],
+          }}
+          transition={{
+            duration: d.duration,
+            delay: d.delay,
+            ease: "easeIn",
+          }}
         />
       ))}
 
-      {suckLines.map((s, i) => (
-        <div
-          key={i}
-          className="suck-line"
-          style={
-            {
-              "--angle": s.angle,
-              "--delay": `${s.delay}s`,
-              "--length": `${s.length}px`,
-              "--start-x": `${Math.cos((s.angle * Math.PI) / 180) * 400}px`,
-              "--start-y": `${Math.sin((s.angle * Math.PI) / 180) * 400}px`,
-            } as React.CSSProperties
-          }
-        />
-      ))}
+      {suckLines.map((line, i) => {
+        const rad = (line.angle * Math.PI) / 180;
+        const cx = 50 + 30 * Math.cos(rad);
+        const cy = 50 + 30 * Math.sin(rad);
+        return (
+          <motion.div
+            key={`suck-${i}`}
+            className="absolute"
+            style={{
+              width: "1px",
+              height: `${line.length}px`,
+              top: `${cy}%`,
+              left: `${cx}%`,
+              transformOrigin: "center top",
+              transform: `rotate(${line.angle}deg)`,
+              background: `linear-gradient(to top, transparent, oklch(0.6 0.2 260 / 0.06), transparent)`,
+            }}
+            initial={{ scaleY: 0, opacity: 0 }}
+            animate={{
+              scaleY: [0, 1, 0],
+              opacity: [0, 0.6, 0],
+            }}
+            transition={{
+              duration: 1.5,
+              delay: line.delay,
+              ease: "easeOut",
+            }}
+          />
+        );
+      })}
 
-      <div className="clear-text">PURGING SYSTEM</div>
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        initial={{ opacity: 0 }}
+        animate={{
+          opacity: [0, 0.3, 0, 0.2, 0],
+        }}
+        transition={{
+          duration: 2.8,
+          times: [0, 0.15, 0.3, 0.45, 1],
+          ease: "easeInOut",
+        }}
+        style={{
+          background: "white",
+        }}
+      />
     </motion.div>
   );
 }

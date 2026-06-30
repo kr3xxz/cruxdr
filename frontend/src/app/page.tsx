@@ -8,6 +8,7 @@ import LogExplorer from "@/components/logs/log-explorer";
 import { Sidebar } from "@/components/layout/sidebar";
 import { AIPanel } from "@/components/incidents/ai-panel";
 import dynamic from "next/dynamic";
+import { LiveIndicator } from "@/components/ui/section-header";
 
 const SOCCommandCenter = dynamic(
   () => import("@/components/soc/soc-command-center").then((m) => m.SOCCommandCenter),
@@ -30,6 +31,7 @@ import { useGraphStore } from "@/store/graph-store";
 import { useUIStore } from "@/store/ui-store";
 import { SectionHeader } from "@/components/ui/section-header";
 import { SeverityBadge } from "@/components/ui/severity-badge";
+import { cn } from "@/lib/utils";
 
 const TAB_META: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: "Security Overview", subtitle: "Real-time threat monitoring & security posture" },
@@ -80,10 +82,12 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
+const ease = [0.25, 0.1, 0.25, 1] as const;
+
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease: [0.25, 0.1, 0.25, 1] } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease } },
 };
 
 export default function DashboardPage() {
@@ -110,22 +114,6 @@ export default function DashboardPage() {
   useEffect(() => {
     setStoreCount(storedEvents.length);
   }, [storedEvents]);
-
-  const clearEvents = useEventStore((state) => state.clearEvents);
-  const clearAlerts = useAlertStore((state) => state.clearAlerts);
-  const clearBlockedIPs = useSecurityStore((state) => state.clearBlockedIPs);
-  const clearGraph = useGraphStore((state) => state.clearGraph);
-
-  const clearAll = () => {
-    clearEvents();
-    clearAlerts();
-    clearBlockedIPs();
-    clearGraph();
-    fetch("http://localhost:8030/incidents", { method: "DELETE" }).catch(() => {});
-    fetch("http://localhost:8030/graph", { method: "DELETE" }).catch(() => {});
-    fetch("http://localhost:8080/logs", { method: "DELETE" }).catch(() => {});
-    fetch("http://localhost:8060/reset", { method: "DELETE" }).catch(() => {});
-  };
 
   const uploadFile = async (e: any) => {
     const file = e.target.files[0];
@@ -223,12 +211,11 @@ export default function DashboardPage() {
     <div className="flex bg-background h-screen overflow-hidden bg-grid">
       <Sidebar />
       <main ref={mainRef} className="flex-1 overflow-y-auto relative z-[1]">
-        {/* Top Header Bar */}
         <div className="sticky top-0 z-20 flex items-center justify-between header-glass px-6 py-3 relative">
-          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/15 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/30 via-violet-500/20 to-transparent" />
           <div className="flex items-center gap-3">
             {tabIcon && (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/40 shadow-sm">
+              <div             className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-cyan-400/20 shadow-[0_0_12px] shadow-cyan-400/10">
                 {tabIcon}
               </div>
             )}
@@ -242,24 +229,20 @@ export default function DashboardPage() {
               <>
                 <div className="flex items-center gap-2 text-xs font-mono">
                   <span className="flex items-center gap-1.5 text-zinc-500">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                    </span>
-                    Live
+                    <LiveIndicator />
                   </span>
                   <span className="text-zinc-700">|</span>
-                  <span className="text-zinc-500 tabular-nums">{storeCount} events</span>
+                  <span className="text-cyan-300 tabular-nums">{storeCount} events</span>
                   {numCritical > 0 && (
                     <>
                       <span className="text-zinc-700">|</span>
-                      <span className="text-red-400 tabular-nums">{numCritical} critical</span>
+                      <span className="text-fuchsia-400 tabular-nums">{numCritical} critical</span>
                     </>
                   )}
                   {numHigh > 0 && (
                     <>
                       <span className="text-zinc-700">|</span>
-                      <span className="text-orange-400 tabular-nums">{numHigh} high</span>
+                      <span className="text-rose-400 tabular-nums">{numHigh} high</span>
                     </>
                   )}
                 </div>
@@ -268,7 +251,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-6 relative z-[1]">
           <AnimatePresence mode="wait">
             <motion.div
@@ -303,7 +285,10 @@ export default function DashboardPage() {
                           <input type="file" onChange={uploadFile} className="hidden" />
                         </label>
                         {uploadStatus && (
-                          <span className={`text-xs font-mono ${uploadStatus.includes("failed") ? "text-red-400" : "text-emerald-400"}`}>
+                          <span className={cn(
+                            "text-xs font-mono transition-all duration-300",
+                            uploadStatus.includes("failed") ? "text-red-400" : "text-emerald-400"
+                          )}>
                             {uploadStatus}
                           </span>
                         )}
@@ -329,15 +314,15 @@ export default function DashboardPage() {
                               initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: idx * 0.03 }}
-                              className="flex items-start gap-3 rounded-lg border border-red-900/15 bg-red-950/15 p-4 hover:border-red-800/25 hover:bg-red-950/25 transition-all duration-200"
+                              className="flex items-start gap-3 rounded-lg border border-fuchsia-900/20 bg-fuchsia-950/15 p-4 hover:border-fuchsia-800/30 hover:bg-fuchsia-950/25 transition-all duration-200"
                             >
-                                  <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="text-sm font-bold text-white">
                                     {(alert.attack_type || "unknown").replace(/_/g, " ").toUpperCase()}
                                   </span>
                                   {alert.mitre_technique && (
-                                    <span className="text-[10px] text-violet-400/80 font-mono">{alert.mitre_technique}</span>
+                                    <span className="text-[10px] text-cyan-400/80 font-mono">{alert.mitre_technique}</span>
                                   )}
                                   {alert.event_count > 1 && (
                                     <span className="text-[10px] text-amber-400/70 font-mono">x{alert.event_count}</span>

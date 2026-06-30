@@ -1,0 +1,26 @@
+title: Startup Folder Modification for Persistence
+id: d0e1f2a3-b4c5-4d6e-8f7a-8b9c0d1e2f10
+status: stable
+description: Detects file writes to Windows Startup folders enabling automatic execution at user logon. Attackers place executables in startup folders for low-observable persistence without registry modifications.
+author: CruXDR SOC Team
+date: 2026-06-28
+references:
+  - https://attack.mitre.org/techniques/T1547/004/
+tags:
+  - attack.persistence
+  - attack.t1547.004
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection:
+    event_type: "persistence"
+    category: "file"
+    file.path: "Start Menu\\Programs\\Startup"
+  condition: selection
+falsepositives:
+  - Application installers adding legitimate shortcuts to startup folder
+  - Users intentionally adding programs to startup for workflow
+level: medium
+mitre:
+  technique: T1547.004

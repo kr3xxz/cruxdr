@@ -12,6 +12,15 @@ def generate_ransomware():
         "severity":
         "critical",
 
+        "event_type":
+        "impact",
+
+        "category":
+        "file",
+
+        "action":
+        "file_modified",
+
         "host":
         fake.hostname(),
 

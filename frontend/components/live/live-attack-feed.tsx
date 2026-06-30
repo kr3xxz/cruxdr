@@ -16,13 +16,27 @@ export function LiveAttackFeed() {
     );
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 h-[500px] overflow-hidden">
+    <div className="glass-panel rounded-xl p-6 h-[500px] overflow-hidden">
 
-      <h2 className="text-white text-xl font-semibold mb-6">
-        Live Attack Stream
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-950/60 border border-red-500/30">
+            <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white tracking-tight">Live Attack Stream</h2>
+            <p className="text-[11px] text-zinc-500 font-mono">Real-time events</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] text-zinc-500 font-mono">Live</span>
+        </div>
+      </div>
 
-      <div className="space-y-3 overflow-y-auto h-[420px]">
+      <div className="space-y-3 overflow-y-auto h-[380px]">
 
         {(events ?? []).map(
           (event, index) => (
@@ -46,11 +60,14 @@ export function LiveAttackFeed() {
                 border-slate-700/20
                 rounded-lg
                 p-4
+                hover:border-slate-600/40
+                transition-all
+                duration-200
               "
             >
               <div className="flex items-center justify-between">
 
-                <p className="text-red-400 font-semibold uppercase">
+                <p className="text-red-400 font-semibold uppercase tracking-wide">
                   {event.attack_type?.replace(/_/g, " ")}
                 </p>
 
@@ -60,13 +77,7 @@ export function LiveAttackFeed() {
                       {event.count} events
                     </span>
                   )}
-                  <div className="
-                    w-3
-                    h-3
-                    rounded-full
-                    bg-slate-800
-                    animate-pulse
-                  " />
+                  <div className="w-3 h-3 rounded-full bg-slate-800 animate-pulse" />
                 </div>
               </div>
 

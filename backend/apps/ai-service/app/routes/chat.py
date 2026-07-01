@@ -25,7 +25,7 @@ async def ai_chat(
 
     context_str = "\n\n".join(context_parts) if context_parts else ""
 
-    text, provider = AISOCService.ask(
+    text, provider = await AISOCService.ask(
         request.question,
         context_str,
     )

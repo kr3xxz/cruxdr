@@ -74,10 +74,11 @@ Whether you are a detection engineer validating Sigma rules, a SOC analyst inves
 - **Response History** — Audit trail of all automated response actions
 
 ### AI SOC Assistant
-- **Live Alert Analysis** — Sends security events to a local LLM (Ollama) for contextual analysis
+- **Live Alert Analysis** — Sends security events to DeepSeek (via opencode.ai Zen API) for contextual analysis
 - **Threat Summaries** — Natural-language summaries of ongoing incidents
 - **Response Recommendations** — AI-generated suggestions for containment and remediation
 - **Context-Aware** — Analysis includes MITRE technique, severity, host, and user context
+- **Powered by DeepSeek v4** — Zero local GPU required; queries are processed remotely via the Zen API gateway
 
 ### Attack Simulation
 - **Pre-built Attack Scenarios** — 20+ sample log files covering credential access, execution, persistence, privilege escalation, lateral movement, exfiltration, defense evasion, and more
@@ -194,7 +195,7 @@ Log Source → Kafka (cruxdr-logs) → Sigma Matcher (per-event YAML eval)
 | **UEBA Service** | `8060` | `cruxdr-ueba-service` | User & Entity Behavior Analytics. Consumes events, calculates risk scores, detects anomalies (impossible travel, data spikes, etc.) |
 | **SOAR Service** | `8061` | `crux-soar-service` | Security Orchestration, Automation, and Response. Receives incidents, manages block/isolate/disable actions |
 | **Simulation Service** | `8010` | `cruxdr-simulation-service` | Attack simulation engine. REST endpoints + WebSocket streams for synthetic attack generation |
-| **AI Service** | `8001` | `crux-ai-service` | AI-powered analysis. Sends events to local Ollama LLM for threat summaries and recommendations |
+| **AI Service** | `8001` | `crux-ai-service` | AI-powered SOC analysis via DeepSeek (Zen API). Processes chat queries and automated threat summaries |
 | **Control Service** | `8070` | `cruxdr-control-service` | Platform control plane and alert management API |
 | **Hunting Service** | `8040` | `cruxdr-hunting-service` | Threat hunting gateway for proactive IOC-based queries |
 | **Search Service** | `8020` | `cruxdr-search-service` | Event and log search API across OpenSearch |
@@ -225,7 +226,7 @@ Log Source → Kafka (cruxdr-logs) → Sigma Matcher (per-event YAML eval)
 - **Search Engine**: OpenSearch 2.12
 - **Databases**: PostgreSQL 16, Redis 7, Qdrant
 - **Object Storage**: MinIO
-- **AI**: Ollama (optional, for AI SOC Assistant)
+- **AI**: DeepSeek v4 via opencode.ai Zen API (no local GPU required)
 
 ### Frontend
 - **Framework**: Next.js 16 (App Router)
@@ -412,7 +413,7 @@ These actions appear in the incident details and are logged in the SOAR response
 - 8 GB+ RAM recommended (16 GB for all services + AI)
 
 ### Optional
-- **Ollama** with `tinyllama` model for AI SOC Assistant features
+- **Zen API Key** — Required for AI SOC Assistant features (get one at https://opencode.ai)
 - **OpenSearch Dashboards** at http://localhost:5601 for direct log exploration
 
 ---
@@ -425,8 +426,10 @@ git clone https://github.com/kr3xxz/cruxdr.git
 cd cruxdr
 
 # 2. Configure environment
-# The default .env works for local development
-# Review and adjust if needed
+cp .env .env.backup
+# Edit .env to add your Zen API key (required for AI SOC Assistant):
+#   ZEN_API_KEY=sk-your-key-here
+# Get a free key at https://opencode.ai
 
 # 3. Launch backend
 docker compose up -d --build
@@ -459,6 +462,8 @@ Copy `.env` from the repository root. Key variables:
 | `KAFKA_PORT` | `9092` | Kafka broker port |
 | `OPENSEARCH_PORT` | `9200` | OpenSearch REST port |
 | `JWT_SECRET` | `change-me...` | JWT signing secret (change for production) |
+| `ZEN_API_KEY` | — | **Required for AI SOC Assistant.** Get a free API key from https://opencode.ai |
+| `ZEN_MODEL` | `deepseek-v4-flash-free` | Zen model ID to use for AI queries |
 
 ### Frontend Environment (`frontend/.env.local`)
 

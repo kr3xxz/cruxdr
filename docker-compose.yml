@@ -260,7 +260,7 @@ services:
       context: ./backend/apps/ai-service
     container_name: crux-ai-service
     ports:
-      - "8001:8080"
+      - "8001:8001"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:

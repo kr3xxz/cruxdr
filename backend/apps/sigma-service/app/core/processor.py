@@ -58,15 +58,9 @@ def _dedup_store(existing: list, new_alerts: list) -> list:
     return list(seen.values())
 
 
-class SigmaProcessor:
-
-    @staticmethod
-    async def start():
-
+async def _create_consumer():
+    for attempt in range(10):
         try:
-
-            print("[*] SIGMA PROCESSOR STARTED")
-
             consumer = KafkaConsumer(
                 "cruxdr-logs",
                 bootstrap_servers="crux-kafka:9092",
@@ -74,21 +68,36 @@ class SigmaProcessor:
                 auto_offset_reset="earliest",
                 group_id="sigma-service"
             )
-
             print("[*] KAFKA CONNECTED")
+            return consumer
+        except Exception as e:
+            print(f"[KAFKA] consumer attempt {attempt + 1}/10: {e}", flush=True)
+            if attempt < 9:
+                await asyncio.sleep(3)
+    raise RuntimeError("Could not connect to Kafka after 10 attempts")
 
-            producer = get_producer()
 
-            while True:
+class SigmaProcessor:
+
+    @staticmethod
+    async def start():
+        print("[*] SIGMA PROCESSOR STARTED")
+
+        consumer = None
+        producer = get_producer()
+
+        while True:
+            try:
+                if consumer is None:
+                    consumer = await _create_consumer()
+                    print("[*] SIGMA PROCESSOR ENTERING LOOP")
 
                 messages = consumer.poll(timeout_ms=100)
 
                 batch_alerts = []
 
                 for tp, records in messages.items():
-
                     for message in records:
-
                         try:
                             event = message.value
                             logs_store.append(event)
@@ -113,10 +122,10 @@ class SigmaProcessor:
 
                 await asyncio.sleep(0.5)
 
-        except Exception as e:
-
-            print("[!!!] SIGMA PROCESSOR CRASHED")
-
-            print(str(e))
-
-            traceback.print_exc()
+            except Exception as e:
+                print("[!!!] SIGMA PROCESSOR CRASHED")
+                print(str(e), flush=True)
+                traceback.print_exc()
+                consumer = None
+                print("[*] SIGMA PROCESSOR WILL RETRY IN 5s", flush=True)
+                await asyncio.sleep(5)

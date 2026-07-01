@@ -1,24 +1,33 @@
+import asyncio
 from kafka import KafkaProducer
 import json
 
-producer = KafkaProducer(
-    bootstrap_servers="crux-kafka:9092",
-    value_serializer=lambda v:
-        json.dumps(v).encode("utf-8")
-)
+_producer = None
 
-def send_event(event):
+def get_producer():
+    global _producer
+    if _producer is None:
+        _producer = KafkaProducer(
+            bootstrap_servers="crux-kafka:9092",
+            value_serializer=lambda v:
+                json.dumps(v).encode("utf-8")
+        )
+    return _producer
 
-    producer.send(
-        "cruxdr-logs",
-        event
-    )
+async def send_event(event):
+    for attempt in range(5):
+        try:
+            p = get_producer()
+            p.send("cruxdr-logs", event)
+            p.flush()
+            return
+        except Exception as e:
+            if attempt < 4:
+                await asyncio.sleep(2 ** attempt)
+            else:
+                print(f"[KAFKA ERROR] send_event failed after 5 retries: {e}", flush=True)
 
-    producer.flush()
-
-
-def send_alert(alert):
-
+async def send_alert(alert):
     payload = {
         "title":
             alert.get(
@@ -70,9 +79,14 @@ def send_alert(alert):
         }
     }
 
-    producer.send(
-        "alerts",
-        payload
-    )
-
-    producer.flush()
+    for attempt in range(5):
+        try:
+            p = get_producer()
+            p.send("alerts", payload)
+            p.flush()
+            return
+        except Exception as e:
+            if attempt < 4:
+                await asyncio.sleep(2 ** attempt)
+            else:
+                print(f"[KAFKA ERROR] send_alert failed after 5 retries: {e}", flush=True)

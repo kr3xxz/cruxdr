@@ -74,7 +74,7 @@ async def upload(
 
         try:
 
-            send_event(
+            await send_event(
                 event
             )
 

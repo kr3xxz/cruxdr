@@ -1,7 +1,8 @@
 import asyncio
+import time
 import requests
 
-from app.core.consumer import consumer
+from app.core.consumer import get_consumer
 from app.data.store import incidents_store
 from app.core.graph_builder import GraphBuilder
 
@@ -11,11 +12,17 @@ class IncidentProcessor:
     @staticmethod
     async def start():
 
-        print("[*] INCIDENT PROCESSOR STARTED")
+        print("[*] INCIDENT PROCESSOR STARTED", flush=True)
+
+        consumer = None
 
         while True:
 
             try:
+
+                if consumer is None:
+                    consumer = get_consumer()
+                    print("[*] KAFKA CONNECTED", flush=True)
 
                 messages = consumer.poll(
                     timeout_ms=100
@@ -212,6 +219,7 @@ class IncidentProcessor:
                     f"[PROCESSOR ERROR] {e}",
                     flush=True
                 )
+                time.sleep(1)
 
             await asyncio.sleep(0.5)
 

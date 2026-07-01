@@ -26,10 +26,11 @@ app.include_router(graph_router)
 
 @app.on_event("startup")
 async def startup():
-
-    asyncio.create_task(
+    print("[*] CORRELATION STARTUP EVENT FIRED", flush=True)
+    asyncio.ensure_future(
         IncidentProcessor.start()
     )
+    print("[*] CORRELATION TASK SCHEDULED", flush=True)
 
 
 @app.get("/")

@@ -18,6 +18,12 @@ async def execute_response(incident: dict):
     return await SOAREngine.execute(incident)
 
 
+@router.delete("/responses")
+async def clear_responses():
+    responses_store.clear()
+    return {"message": "Responses cleared"}
+
+
 @router.get("/blocked-ips")
 async def list_blocked_ips():
     return {"blocked_ips": await FirewallService.list_blocked()}

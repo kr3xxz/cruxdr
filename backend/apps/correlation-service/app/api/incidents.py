@@ -1,3 +1,4 @@
+import requests
 from fastapi import APIRouter, Body
 
 from app.data.store import incidents_store
@@ -53,14 +54,24 @@ async def create_incident(incident: dict = Body(...)):
         _merge_incident(found, incident)
         incidents_store.remove(found)
         incidents_store.append(found)
-        return {"status": "updated", "alert_count": found.get("alert_count", 1)}
+        status = "updated"
+    else:
+        incident["alert_count"] = 1
+        incident["last_seen"] = incident.get("last_seen") or incident.get("timestamp") or ""
+        incidents_store.append(incident)
+        incidents_store[:] = incidents_store[-100:]
+        status = "created"
 
-    incident["alert_count"] = 1
-    incident["last_seen"] = incident.get("last_seen") or incident.get("timestamp") or ""
-    incidents_store.append(incident)
-    incidents_store[:] = incidents_store[-100:]
+    try:
+        requests.post(
+            "http://soar-service:8000/responses",
+            json=incident,
+            timeout=3,
+        )
+    except Exception as e:
+        print(f"[SOAR FORWARD ERROR] {e}", flush=True)
 
-    return {"status": "created", "alert_count": 1}
+    return {"status": status, "alert_count": found.get("alert_count", 1) if found else 1}
 
 
 @router.delete("/incidents")

@@ -356,54 +356,53 @@ These actions appear in the incident details and are logged in the SOAR response
 
 ### Dashboard Overview
 
-```
+
 ## Dashboard Overview
 
 ![Dashboard Overview](screenshots/Dashboard%20Overview.png)
-```
+
 
 ### Sigma Studio
 
-```
-[Screenshot: Sigma Studio showing loaded rules and triggered alerts]
-```
+
+![Sigma Studio](screenshots/Sigma%20studio.png)
+
 
 ### MITRE ATT&CK Heatmap
 
-```
-[Screenshot: MITRE ATT&CK matrix with active techniques highlighted]
-```
+
+![MITRE ATT&CK Heatmap](screenshots/mittre.png)
+![MITRE ATT&CK Heatmap](screenshots/mittre1.png)
 
 ### Attack Graph
 
-```
-[Screenshot: Interactive attack graph with source IPs, victims, and MITRE annotations]
-```
+
+![Attack Graph](screenshots/attack%20graph.png)
+[▶ Watch the Attack Simulation](screenshots/attack%20video.mp4)
 
 ### Incident Response
 
-```
-[Screenshot: Correlated incidents with timeline, IOCs, and SOAR actions]
-```
+![Incident Response](screenshots/incident.png)
+
 
 ### UEBA Dashboard
 
-```
-[Screenshot: UEBA risk scores, anomaly list, and risk distribution chart]
-```
+
+![Incident Response](screenshots/ueba.png)
+![Incident Response](screenshots/ueba1.png)
+![Incident Response](screenshots/ueba2.png)
 
 ### SOAR Actions
 
-```
-[Screenshot: SOAR response panel with block/isolation/disable actions]
-```
+
+### SOAR Automation Demo
+
+[▶ Watch the SOAR Automation Demo](screenshots/blocked_soar.mp4)
+
 
 ### AI SOC Assistant
 
-```
-[Screenshot: AI analysis panel with threat summary and recommendations]
-```
-
+![AI SOC](screenshots/Ai%20SOC.png)
 ---
 
 ## Prerequisites

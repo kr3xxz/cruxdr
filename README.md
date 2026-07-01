@@ -377,8 +377,9 @@ These actions appear in the incident details and are logged in the SOAR response
 ### Attack Graph
 
 
-![Attack Graph](screenshots/attack%20graph.png)
-[▶ Watch the Attack Simulation](screenshots/attack%20video.mp4)
+### Attack Simulation Demo
+
+[![Attack Graph](screenshots/attack%20graph.png)](screenshots/attack%20video.mp4)
 
 ### Incident Response
 
@@ -394,16 +395,13 @@ These actions appear in the incident details and are logged in the SOAR response
 
 ### SOAR Actions
 
-
-### SOAR Automation Demo
-
-[▶ Watch the SOAR Automation Demo](screenshots/blocked_soar.mp4)
+[![SOAR Automation Demo](screenshots/blocked_soar.png)](screenshots/blocked_soar.mp4)
 
 
 ### AI SOC Assistant
 
 ![AI SOC](screenshots/Ai%20SOC.png)
----
+
 
 ## Prerequisites
 

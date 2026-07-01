@@ -357,7 +357,9 @@ These actions appear in the incident details and are logged in the SOAR response
 ### Dashboard Overview
 
 ```
-[Screenshot: Dashboard with KPI cards, live alerts, and telemetry upload section]
+## Dashboard Overview
+
+![Dashboard Overview](screenshots/Dashboard%20Overview.png)
 ```
 
 ### Sigma Studio
